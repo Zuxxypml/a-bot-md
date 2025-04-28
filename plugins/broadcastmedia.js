@@ -1,64 +1,71 @@
-const fs = require('fs');
-const { readFileSync: read, unlinkSync: remove } = require('fs');
-const path = require('path');
-const { exec } = require('child_process');
-const { tmpdir } = require('os');
+const fs = require("fs");
+const { readFileSync: read, unlinkSync: remove } = require("fs");
+const path = require("path");
+const { exec } = require("child_process");
+const { tmpdir } = require("os");
 
 let handler = async (m, { conn, usedPrefix, command, text }) => {
-    const delay = ms => new Promise(res => setTimeout(res, ms));
-    const q = m.quoted ? m.quoted : m;
-    const mime = (q.msg || q).mimetype || q.mediaType || '';
-    const pesan = m.quoted && m.quoted.text ? m.quoted.text : text;
+  const delay = (ms) => new Promise((res) => setTimeout(res, ms));
+  const q = m.quoted ? m.quoted : m;
+  const mime = (q.msg || q).mimetype || q.mediaType || "";
+  const pesan = m.quoted && m.quoted.text ? m.quoted.text : text;
 
-    if (!mime || !/image/.test(mime)) {
-        return conn.reply(m.chat, `Example: reply/send image with caption *${usedPrefix + command}*`, m);
-    }
+  if (!mime || !/image/.test(mime)) {
+    return conn.reply(
+      m.chat,
+      `Example: Reply/send an image with a caption *${usedPrefix + command}*`,
+      m
+    );
+  }
 
-    try {
-        // Mendapatkan path sementara untuk file hasil konversi
-        let file = path.join(tmpdir(), `${Date.now()}.png`);
-        let media = await conn.downloadAndSaveMediaMessage(q, path.join(tmpdir(), `${Date.now()}.webp`));
+  try {
+    // Temporary file paths
+    const timestamp = Date.now();
+    const webpFile = path.join(tmpdir(), `${timestamp}.webp`);
+    const pngFile = path.join(tmpdir(), `${timestamp}.png`);
 
-        // Eksekusi konversi dari webp ke png menggunakan ffmpeg
-        exec(`ffmpeg -i ${media} ${file}`, async (err, stderr, stdout) => {
-            if (err) {
-                console.error("Error converting file:", err);
-                return m.reply("Gagal mengonversi gambar.");
-            }
+    const media = await conn.downloadAndSaveMediaMessage(q, webpFile);
 
-            // Hapus file sumber setelah konversi selesai
-            remove(media);
+    // Convert webp to png
+    exec(`ffmpeg -i ${media} ${pngFile}`, async (err) => {
+      if (err) {
+        console.error("Conversion error:", err);
+        return m.reply("Failed to convert image.");
+      }
 
-            // Baca file png yang sudah dikonversi
-            const buffer = read(file);
+      remove(media); // Remove the original webp
 
-            // Mengambil semua grup yang diikuti
-            let getGroups = await conn.groupFetchAllParticipating();
-            let groups = Object.values(getGroups);
-            let anu = groups.map(group => group.id);
+      const buffer = read(pngFile);
 
-            conn.reply(m.chat, `_Mengirim pesan broadcast ke ${anu.length} chat_`, m);
+      let getGroups = await conn.groupFetchAllParticipating();
+      let groups = Object.values(getGroups);
+      let groupIds = groups.map((group) => group.id);
 
-            // Mengirim pesan broadcast ke semua grup
-            for (let id of anu) {
-                await delay(500);
-                await conn.sendFile(id, buffer, `${Date.now()}.png`, pesan, m).catch(console.error);
-            }
+      conn.reply(
+        m.chat,
+        `_Sending broadcast to ${groupIds.length} groups..._`,
+        m
+      );
 
-            // Memberi konfirmasi
-            m.reply(`Sukses Mengirim Broadcast Ke ${anu.length} Group`);
+      for (let id of groupIds) {
+        await delay(500);
+        await conn
+          .sendFile(id, buffer, `${timestamp}.png`, pesan, m)
+          .catch(console.error);
+      }
 
-            // Hapus file sementara setelah selesai
-            remove(file);
-        });
-    } catch (e) {
-        console.error(e);
-        m.reply(`Terjadi Kesalahan!\nCode: ${e}`);
-    }
+      m.reply(`✅ Successfully sent broadcast to ${groupIds.length} groups.`);
+
+      remove(pngFile); // Cleanup converted png
+    });
+  } catch (e) {
+    console.error(e);
+    m.reply(`❌ An error occurred!\n\nError: ${e}`);
+  }
 };
 
-handler.help = ['broadcastimg', 'bcimg'].map(v => v + ' <teks>');
-handler.tags = ['owner'];
+handler.help = ["broadcastimg", "bcimg"].map((v) => v + " <text>");
+handler.tags = ["owner"];
 handler.command = /^(broadcastimg|bcimg)$/i;
 handler.owner = true;
 

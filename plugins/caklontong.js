@@ -1,42 +1,74 @@
-let fetch = require('node-fetch')
-let fs = require('fs')
-let timeout = 30000
-let poin = 700
+const fetch = require("node-fetch");
+const fs = require("fs");
+
+const timeout = 30000; // 30 seconds
+const poin = 700;
+
 let handler = async (m, { conn, usedPrefix }) => {
-    conn.caklontong = conn.caklontong ? conn.caklontong : {}
-    let id = m.chat
-    if (id in conn.caklontong) {
-        if (conn.caklontong[id].length !== 0) return conn.reply(m.chat, 'Masih ada soal belum terjawab di chat ini', conn.caklontong[id][0])
-        delete conn.caklontong[id]
-        throw false
+  conn.caklontong = conn.caklontong || {};
+  let id = m.chat;
+
+  if (id in conn.caklontong) {
+    if (conn.caklontong[id].length !== 0) {
+      conn.reply(
+        m.chat,
+        "🚫 There is still an unanswered question!",
+        conn.caklontong[id][0]
+      );
+      throw false;
     }
-    conn.caklontong[id] = []
-    let src = JSON.parse(fs.readFileSync(`./src/scrap/caklontong.json`))
-    let json = src[Math.floor(Math.random() * src.length)]
+    delete conn.caklontong[id];
+  }
 
-    conn.scrapGame(global.API('lolhuman', '/api/tebak/caklontong2', '', 'apikey'), 'caklontong').catch(_ => _)
+  let src;
+  try {
+    src = JSON.parse(fs.readFileSync(`./src/scrap/caklontong.json`));
+  } catch (e) {
+    console.error(e);
+    return m.reply("⚠️ Failed to load Cak Lontong questions.");
+  }
 
-    // if (!json.status) throw json
-    let caption = `
-*Soal:* ${json.result.question}
+  let json = src[Math.floor(Math.random() * src.length)];
+  if (!json || !json.result) {
+    return m.reply("⚠️ Unable to fetch a question.");
+  }
 
-Waktu Jawab: *${(timeout / 1000).toFixed(2)} detik*
-Bonus: ${poin} XP
-*Reply pesan ini untuk menjawab!*`.trim()
-    let btn = await conn.reply(m.chat, caption + `\n*TEBAK CAK LONTONG*\n*ALERT!! Soal ini menguji kesabaran kamu ^_^*\nBantuan mengurangi 1 limit`, m)
-    conn.caklontong[id] = [
-        btn,
-        json, poin,
-        setTimeout(() => {
-            if (conn.caklontong[id]) conn.reply(m.chat, `Waktu habis!\nJawabannya adalah *${json.result.answer}*\nAlasan: ${json.result.information}`, conn.caklontong[id][0])
-            delete conn.caklontong[id]
-        }, timeout)
-    ]
-}
-handler.help = ['caklontong']
-handler.tags = ['game']
-handler.command = /^caklontong$/i
-handler.limit = false
-handler.group = true
+  let caption = `
+*Question:* ${json.result.question}
 
-module.exports = handler
+⏱️ Time Limit: *${(timeout / 1000).toFixed(0)} seconds*
+🎁 Bonus: +${poin} XP
+
+*Reply to this message to answer!*`.trim();
+
+  let msg = await conn.reply(
+    m.chat,
+    caption +
+      `\n\n*GUESS CAK LONTONG STYLE*\n⚡ WARNING: This question will test your patience, get ready to bite your fingers! 🤣`,
+    m
+  );
+
+  conn.caklontong[id] = [
+    msg,
+    json,
+    poin,
+    setTimeout(() => {
+      if (conn.caklontong[id]) {
+        conn.reply(
+          m.chat,
+          `⏰ Time's up!\n\n📝 Answer: *${json.result.answer}*\n💬 Explanation: ${json.result.information}`,
+          conn.caklontong[id][0]
+        );
+        delete conn.caklontong[id];
+      }
+    }, timeout),
+  ];
+};
+
+handler.help = ["caklontong"];
+handler.tags = ["game"];
+handler.command = /^caklontong$/i;
+handler.limit = false;
+handler.group = true;
+
+module.exports = handler;

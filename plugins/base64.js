@@ -1,10 +1,13 @@
 let handler = async (m, { command, text }) => {
   let txt = text || (m.quoted && m.quoted.text) || false;
-  if (!text) throw `Masukan text`
-  m.reply(Buffer.from(txt, 'utf-8').toString('base64'))
-}
-handler.help = ['base64 <teks>']
-handler.tags = ['tools']
-handler.command = /^base64$/i
+  if (!txt) throw `Please input text to encode.`;
 
-module.exports = handler
+  let encoded = Buffer.from(txt, "utf-8").toString("base64");
+  m.reply(encoded);
+};
+
+handler.help = ["base64 <text>"];
+handler.tags = ["tools"];
+handler.command = /^base64$/i;
+
+module.exports = handler;

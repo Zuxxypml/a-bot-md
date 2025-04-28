@@ -1,68 +1,71 @@
+const fetch = require("node-fetch");
+const { randomBytes, randomUUID } = require("crypto");
+
 let handler = async (m, { conn, text, usedPrefix, command }) => {
-  if (!text) return m.reply(`Masukkan pertanyaan untuk dijawab!\n\n*Contoh:* ${usedPrefix + command} Siapa presiden Indonesia?`);
+  if (!text)
+    return m.reply(
+      `Please enter a question!\n\n*Example:* ${
+        usedPrefix + command
+      } Who is the president of Nigeria?`
+    );
 
-  const { randomBytes, randomUUID } = require("crypto");
-  const fetch = require("node-fetch");
-
-  const api = 'https://api.blackbox.ai/api/chat';
+  const api = "https://api.blackbox.ai/api/chat";
   const headers = {
-    'User-Agent': 'Postify/1.0.0',
-    'Accept': '/',
-    'Referer': 'https://api.blackbox.ai',
-    'Content-Type': 'application/json',
-    'Origin': 'https://api.blackbox.ai',
-    'DNT': '1',
-    'Sec-GPC': '1',
-    'Connection': 'keep-alive'
+    "User-Agent": "Postify/1.0.0",
+    Accept: "*/*",
+    Referer: "https://api.blackbox.ai",
+    "Content-Type": "application/json",
+    Origin: "https://api.blackbox.ai",
+    DNT: "1",
+    "Sec-GPC": "1",
+    Connection: "keep-alive",
   };
 
-  const request = (chat) => chat.map(({ files, ...rest }) => rest);
-  const rhex = (bytes) => randomBytes(bytes).toString('hex');
-  const uuid = () => randomUUID();
+  const formatChat = (chat) => chat.map(({ files, ...rest }) => rest);
+  const generateRandomHex = (bytes) => randomBytes(bytes).toString("hex");
+  const generateUUID = () => randomUUID();
 
-  const config = (model) => ({
-    trendingAgentMode: model[model] || {},
-    userSelectedModel: defaultModel[model] || undefined,
-    ...po[model]
+  const modelSettings = {
+    blackbox: {},
+    "llama-3.1-405b": { mode: true, id: "llama-3.1-405b" },
+    "llama-3.1-70b": { mode: true, id: "llama-3.1-70b" },
+    "gemini-1.5-flash": { mode: true, id: "Gemini" },
+  };
+
+  const defaultModels = {
+    "gpt-4o": "gpt-4o",
+    "claude-3.5-sonnet": "claude-sonnet-3.5",
+    "gemini-pro": "gemini-pro",
+  };
+
+  const extraOptions = {
+    "gpt-4o": { maxTokens: 4096 },
+    "claude-3.5-sonnet": { maxTokens: 8192 },
+    "gemini-pro": { maxTokens: 8192 },
+  };
+
+  const buildConfig = (model) => ({
+    trendingAgentMode: modelSettings[model] || {},
+    userSelectedModel: defaultModels[model] || undefined,
+    ...extraOptions[model],
   });
 
-  const model = {
-    blackbox: {},
-    'llama-3.1-405b': { mode: true, id: 'llama-3.1-405b' },
-    'llama-3.1-70b': { mode: true, id: 'llama-3.1-70b' },
-    'gemini-1.5-flash': { mode: true, id: 'Gemini' }
-  };
-
-  const defaultModel = {
-    'gpt-4o': 'gpt-4o',
-    'claude-3.5-sonnet': 'claude-sonnet-3.5',
-    'gemini-pro': 'gemini-pro'
-  };
-
-  const po = {
-    'gpt-4o': { maxTokens: 4096 },
-    'claude-3.5-sonnet': { maxTokens: 8192 },
-    'gemini-pro': { maxTokens: 8192 }
-  };
-
-  const clear = (response) => {
-    return response.replace(/\$\$(.*?)\$\$/g, '').trim();
-  };
+  const cleanResponse = (text) => text.replace(/\$\$(.*?)\$\$/g, "").trim();
 
   const BlackBox = {
     async generate(chat, options, { max_retries = 5 } = {}) {
-      const random_id = rhex(16);
-      const random_user_id = uuid();
-      chat = request(chat);
+      const randomId = generateRandomHex(16);
+      const randomUserId = generateUUID();
+      chat = formatChat(chat);
 
       const data = {
         messages: chat,
-        id: random_id,
-        userId: random_user_id,
+        id: randomId,
+        userId: randomUserId,
         previewToken: null,
         codeModelMode: true,
         agentMode: {},
-        ...config(options.model),
+        ...buildConfig(options.model),
         isMicMode: false,
         isChromeExt: false,
         githubToken: null,
@@ -76,42 +79,45 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
       };
 
       try {
-        const response = await fetch(api, { method: 'POST', headers, body: JSON.stringify(data) });
-        if (!response.ok) {
-          throw new Error(`${await response.text()}`);
-        }
+        const response = await fetch(api, {
+          method: "POST",
+          headers,
+          body: JSON.stringify(data),
+        });
+        if (!response.ok) throw new Error(await response.text());
 
-        let tc = await response.text();
-        let tr = clear(tc);
+        let responseText = await response.text();
+        let finalResponse = cleanResponse(responseText);
 
-        if (tr.includes("$~$")) {
-          data.mode = 'continue';
-          if (!data.messages.some(msg => msg.content === tr)) {
-            data.messages.push({ content: tr, role: 'assistant' });
+        if (finalResponse.includes("$~$")) {
+          data.mode = "continue";
+          if (!data.messages.some((msg) => msg.content === finalResponse)) {
+            data.messages.push({ content: finalResponse, role: "assistant" });
           }
-
-          const cor = await fetch(api, { method: 'POST', headers, body: JSON.stringify(data) });
-          let ctc = await cor.text();
-          tr += clear(ctc);
+          const continuation = await fetch(api, {
+            method: "POST",
+            headers,
+            body: JSON.stringify(data),
+          });
+          finalResponse += cleanResponse(await continuation.text());
         }
 
-        return tr;
-
-      } catch (err) {
+        return finalResponse;
+      } catch (error) {
         if (max_retries > 0) {
-          console.error(err, "Mencoba ulang...");
+          console.error(error, "Retrying...");
           return this.generate(chat, options, { max_retries: max_retries - 1 });
         } else {
-          throw err;
+          throw error;
         }
       }
-    }
+    },
   };
 
-  let key = await conn.sendMessage(m.chat, { text: "..." });
+  let key = await conn.sendMessage(m.chat, { text: "⌛ Please wait..." });
   try {
-    const chatMessages = [{ role: 'user', content: text }];
-    const options = { model: 'blackbox', temperature: 0.7 };
+    const chatMessages = [{ role: "user", content: text }];
+    const options = { model: "blackbox", temperature: 0.7 };
 
     const responseMessage = await BlackBox.generate(chatMessages, options);
 
@@ -121,14 +127,14 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
     });
   } catch (error) {
     await conn.sendMessage(m.chat, {
-      text: `Error: ${error.message}`,
+      text: `❌ Error: ${error.message}`,
       edit: key.key,
     });
   }
 };
 
-handler.help = ['blackbox [Pertanyaan]'];
-handler.tags = ['ai'];
-handler.command = ['blackbox'];
+handler.help = ["blackbox <your question>"];
+handler.tags = ["ai"];
+handler.command = ["blackbox"];
 
 module.exports = handler;
