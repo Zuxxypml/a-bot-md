@@ -1,31 +1,42 @@
-let handler = m => m
+let handler = (m) => m;
+
 handler.before = function (m) {
-  let user = global.db.data.users[m.sender]
+  let user = global.db.data.users[m.sender];
+
+  // If the user was AFK
   if (user.afk > -1) {
-    m.reply(`
-Kamu berhenti AFK${user.afkReason ? ' setelah ' + user.afkReason : ''}
-Selama ${this.msToDate(new Date - user.afk)} 
-`.trim())
-    user.afk = -1
-    user.afkReason = ''
-  }
-  let jids = [...new Set([...(m.mentionedJid || []), ...(m.quoted ? [m.quoted.sender] : [])])]
-  for (let jid of jids) {
-    let user = global.db.data.users[jid]
-    if (!user) continue
-    let afkTime = user.afk
-    if (!afkTime || afkTime < 0) continue
-    let reason = user.afkReason || 'AFK'
-    let teks = `
-_@${jid.split`@`[0]} sedang OFF/AFK_
-
-Alasan: ${reason}
-Sudah OFF selama: ${this.msToDate(new Date - afkTime)} 
+    m.reply(
+      `
+You have stopped being AFK${user.afkReason ? " after " + user.afkReason : ""}
+You were away for: ${this.msToDate(new Date() - user.afk)}
 `.trim()
-    m.reply(teks, m.chat)
+    );
+    user.afk = -1;
+    user.afkReason = "";
   }
-  return true
-}
 
-module.exports = handler
+  // Check if anyone mentioned is AFK
+  let jids = [
+    ...new Set([
+      ...(m.mentionedJid || []),
+      ...(m.quoted ? [m.quoted.sender] : []),
+    ]),
+  ];
+  for (let jid of jids) {
+    let mentionedUser = global.db.data.users[jid];
+    if (!mentionedUser) continue;
+    let afkTime = mentionedUser.afk;
+    if (!afkTime || afkTime < 0) continue;
+    let reason = mentionedUser.afkReason || "AFK";
+    let teks = `
+_@${jid.split("@")[0]} is currently AFK_
 
+Reason: ${reason}
+Away for: ${this.msToDate(new Date() - afkTime)}
+`.trim();
+    m.reply(teks, m.chat);
+  }
+  return true;
+};
+
+module.exports = handler;
