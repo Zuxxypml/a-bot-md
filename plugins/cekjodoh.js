@@ -1,82 +1,91 @@
 let handler = async (m, { conn, text, mentionedJid, participants }) => {
-    //let user1 = m.mentionedJid[0] ? m.mentionedJid[0] : m.quoted ? m.quoted.sender.replace(/[^0-9]/g, '') + '@s.whatsapp.net' : false;
-    //let user2 = m.mentionedJid[1] ? m.mentionedJid[1] : false;
-    //if (!user1 || !user2) {
-    //    return conn.reply(m.chat, 'Tag dua nama atau satu tag dan satu kutipan!', m);
-    //}
-    let members = participants.filter(p => p.id !== conn.user.jid && !p.isAdmin && !p.isSuperAdmin);
+  // Filter out bot, admins, and superadmins
+  let members = participants.filter(
+    (p) => p.id !== conn.user.jid && !p.isAdmin && !p.isSuperAdmin
+  );
 
-    if (members.length < 2) {
-        return conn.reply(m.chat, 'Minimal harus ada 2 anggota di grup!', m);
-    }
-    let [user1, user2] = pickRandom(members, 2);
+  if (members.length < 2) {
+    return conn.reply(
+      m.chat,
+      "There must be at least 2 members in the group!",
+      m
+    );
+  }
 
-    let jodohReasons = [
-        "Kalian berdua memiliki kesamaan yang luar biasa dan saling melengkapi.",
-        "Hubungan kalian penuh dengan pengertian dan saling mendukung.",
-        "Kalian memiliki chemistry yang kuat dan akan saling melengkapi.",
-        "Kalian saling memahami satu sama lain tanpa perlu banyak kata.",
-        "Kalian berdua selalu menemukan cara untuk membuat satu sama lain tersenyum.",
-        "Kalian memiliki tujuan hidup yang sama dan saling mendukung.",
-        "Kalian berdua memiliki rasa hormat yang besar satu sama lain.",
-        "Kalian bisa saling mengandalkan dalam situasi apapun.",
-        "Kalian selalu merasa nyaman dan aman saat bersama.",
-        "Kalian berdua selalu tahu bagaimana membuat satu sama lain bahagia.",
-        "Kalian memiliki ketertarikan yang sama dan dapat menikmatinya bersama.",
-        "Kalian bisa saling melengkapi dalam banyak hal.",
-        "Kalian selalu saling mendukung dan memberi semangat.",
-        "Kalian berdua memiliki cara yang unik dalam menunjukkan cinta.",
-        "Kalian berbagi banyak kenangan indah bersama.",
-        "Kalian selalu menemukan cara untuk menyelesaikan masalah bersama.",
-        "Kalian saling mengerti dan menerima kekurangan satu sama lain."
-    ];
+  // Randomly select two members
+  let [user1, user2] = pickRandom(members, 2);
 
-    let tidakReasons = [
-        "Meskipun kalian baik, tapi kalian berdua mungkin tidak cocok bersama.",
-        "Kalian mungkin lebih baik sebagai teman daripada pasangan.",
-        "Perbedaan kalian terlalu besar untuk diatasi dalam hubungan romantis.",
-        "Kalian mungkin memiliki visi hidup yang berbeda.",
-        "Terlalu banyak perbedaan yang membuat hubungan kalian sulit.",
-        "Kalian mungkin sulit menemukan kesamaan dalam hal penting.",
-        "Kalian cenderung sering bertengkar dan sulit berkompromi.",
-        "Kalian mungkin kurang memiliki kesamaan dalam nilai dan prinsip.",
-        "Kalian mungkin lebih bahagia jika bersama orang lain.",
-        "Perbedaan kepribadian kalian mungkin sulit untuk dijembatani.",
-        "Kalian mungkin sulit berkomunikasi secara efektif.",
-        "Kalian mungkin kurang bisa saling memahami kebutuhan satu sama lain.",
-        "Kalian mungkin lebih baik menjalani hidup masing-masing.",
-        "Kalian mungkin kurang memiliki kompatibilitas dalam jangka panjang.",
-        "Kalian mungkin kurang memiliki kesamaan dalam hal penting.",
-        "Kalian mungkin sulit untuk sepakat dalam hal penting."
-    ];
+  let jodohReasons = [
+    "You both have amazing similarities and complement each other perfectly.",
+    "Your relationship is full of understanding and mutual support.",
+    "You have strong chemistry and will complement each other well.",
+    "You understand each other without needing many words.",
+    "You both always find ways to make each other smile.",
+    "You share the same life goals and support each other.",
+    "You both have great respect for one another.",
+    "You can rely on each other in any situation.",
+    "You always feel comfortable and safe together.",
+    "You both know how to make each other happy.",
+    "You share similar interests and enjoy them together.",
+    "You complement each other in many ways.",
+    "You always support and encourage each other.",
+    "You both have a unique way of showing love.",
+    "You share many beautiful memories together.",
+    "You always find ways to solve problems together.",
+    "You understand and accept each other's flaws.",
+  ];
 
-    let result = pickRandom(["JODOH", "TIDAK"]);
-    let reason = result === "JODOH" ? pickRandom(jodohReasons) : pickRandom(tidakReasons);
+  let tidakReasons = [
+    "Although you're both great, you might not be compatible together.",
+    "You might be better as friends than as a couple.",
+    "Your differences are too significant for a romantic relationship.",
+    "You may have different visions for life.",
+    "Too many differences make your relationship challenging.",
+    "You might struggle to find common ground on important matters.",
+    "You tend to argue often and find it hard to compromise.",
+    "You may lack shared values and principles.",
+    "You might be happier with someone else.",
+    "Your personality differences might be hard to bridge.",
+    "You may find it difficult to communicate effectively.",
+    "You might struggle to understand each other's needs.",
+    "You may be better off living your own lives.",
+    "You may lack long-term compatibility.",
+    "You may not share enough common ground on important issues.",
+    "You might find it hard to agree on important matters.",
+  ];
 
-    conn.reply(m.chat, `
-⬣───「 *CEK JODOH* 」───⬣
-⬡ Nama 1: @${user1.id.split`@`[0]}
-⬡ Nama 2: @${user2.id.split`@`[0]}
-⬡ Hasil: ${result}
-⬡ Alasan: ${reason}
+  // Determine result and reason
+  let result = pickRandom(["MATCH", "NO MATCH"]);
+  let reason =
+    result === "MATCH" ? pickRandom(jodohReasons) : pickRandom(tidakReasons);
+
+  // Reply with formatted message
+  conn.reply(
+    m.chat,
+    `
+⬣───「 *MATCH CHECK* 」───⬣
+⬡ Name 1: @${user1.id.split`@`[0]}
+⬡ Name 2: @${user2.id.split`@`[0]}
+⬡ Result: ${result}
+⬡ Reason: ${reason}
 ⬣────────────────⬣
-`.trim(), m, { mentions: [user1.id, user2.id] });
+`.trim(),
+    m,
+    { mentions: [user1.id, user2.id] }
+  );
 };
 
-handler.help = ['cekjodoh']
-handler.command = /^cekjodoh$/i
-handler.tags = ['cekjodoh']
+handler.help = ["cekjodoh"];
+handler.command = /^cekjodoh$/i;
+handler.tags = ["cekjodoh"];
 
-module.exports = handler
+module.exports = handler;
 
-//function pickRandom(list) {
-//    return list[Math.floor(Math.random() * list.length)];
-//}
 function pickRandom(list, n = 1) {
-    let result = [];
-    for (let i = 0; i < n; i++) {
-        let index = Math.floor(Math.random() * list.length);
-        result.push(list.splice(index, 1)[0]);
-    }
-    return result;
+  let result = [];
+  for (let i = 0; i < n; i++) {
+    let index = Math.floor(Math.random() * list.length);
+    result.push(list.splice(index, 1)[0]);
+  }
+  return result;
 }

@@ -1,4 +1,4 @@
-const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 let handler = async (m, { conn, command, args }) => {
   // Mengambil semua chat secara asinkron
@@ -7,13 +7,17 @@ let handler = async (m, { conn, command, args }) => {
 
   // Menentukan jenis chat berdasarkan argumen
   if (/group|gc/i.test(args[0])) {
-    chats = allChats.filter(v => v.jid.endsWith('g.us') && !v.pin).map(v => v.jid);
+    chats = allChats
+      .filter((v) => v.jid.endsWith("g.us") && !v.pin)
+      .map((v) => v.jid);
   } else if (/chat|private/i.test(args[0])) {
-    chats = allChats.filter(v => v.jid.endsWith('.net') && !v.pin).map(v => v.jid);
+    chats = allChats
+      .filter((v) => v.jid.endsWith(".net") && !v.pin)
+      .map((v) => v.jid);
   } else if (/all/i.test(args[0])) {
-    chats = allChats.filter(v => v.jid && !v.pin).map(v => v.jid);
+    chats = allChats.filter((v) => v.jid && !v.pin).map((v) => v.jid);
   } else if (/left/i.test(args[0])) {
-    chats = allChats.filter(v => v.read_only).map(v => v.jid);
+    chats = allChats.filter((v) => v.read_only).map((v) => v.jid);
   } else {
     chats = [m.chat];
   }
@@ -42,41 +46,50 @@ let handler = async (m, { conn, command, args }) => {
       // Memberikan delay antara setiap operasi
       await delay(1500);
     } catch (error) {
-      console.error(`Gagal memodifikasi chat ${id}:`, error);
+      console.error(`Failed to modify chat ${id}:`, error);
     }
   }
 
   // Menyusun pesan balasan
-  let action = isDelete ? 'dihapus' :
-               isClear ? 'dibersihkan' :
-               isMute ? 'dimuat' :
-               isUnmute ? 'dibuka mute' : 'diproses';
+  let action = isDelete
+    ? "deleted"
+    : isClear
+    ? "cleared"
+    : isMute
+    ? "muted"
+    : isUnmute
+    ? "unmuted"
+    : "processed";
 
-  conn.reply(m.chat, `${chats.length} chat ${args[0] || ''} telah ${action}`, m);
+  conn.reply(
+    m.chat,
+    `${chats.length} ${args[0] || ""} chats have been ${action}`,
+    m
+  );
 };
 
 // Menambahkan bantuan perintah
 handler.help = [
-  'clearchat',
-  'clearchat chat',
-  'clearchat group',
-  'clearchat all',
-  'deletechat',
-  'deletechat chat',
-  'deletechat group',
-  'deletechat all',
-  'mutechat',
-  'mutechat chat',
-  'mutechat group',
-  'mutechat all',
-  'unmute',
-  'unmute chat',
-  'unmute group',
-  'unmute all'
+  "clearchat",
+  "clearchat chat",
+  "clearchat group",
+  "clearchat all",
+  "deletechat",
+  "deletechat chat",
+  "deletechat group",
+  "deletechat all",
+  "mutechat",
+  "mutechat chat",
+  "mutechat group",
+  "mutechat all",
+  "unmute",
+  "unmute chat",
+  "unmute group",
+  "unmute all",
 ];
 
 // Menandai handler dengan tag dan perintah yang sesuai
-handler.tags = ['owner'];
+handler.tags = ["owner"];
 handler.command = /^(clear|delete|(un)?mute)chat$/i;
 handler.owner = true;
 

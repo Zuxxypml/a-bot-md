@@ -1,13 +1,16 @@
-let fetch = require('node-fetch')
-let { pinterest } = require('@bochilteam/scraper')
-let handler = async (m, { conn, text, usedPrefix, command }) => {
-  let res = await pinterest('foto ' + command.replace('k', ''))
-  // if (res.result.length == 0) throw 'Tidak ada hasil'
-  let pint = conn.pickRandom(res)
-  await conn.sendFile(m.chat, pint, 'img.jpg', '', m)
-}
-handler.help = ['cowok', 'cewek']
-handler.tags = ['imagerandom']
-handler.command = /^(cowok?|cewek?|perempuan|gadis|model)$/i
+let fetch = require("node-fetch");
+let { pinterest } = require("@bochilteam/scraper");
 
-module.exports = handler
+let handler = async (m, { conn, text, usedPrefix, command }) => {
+  let res = await pinterest("photo " + command.replace("k", ""));
+  if (!res.length) throw "No results found.";
+
+  let pint = conn.pickRandom(res);
+  await conn.sendFile(m.chat, pint, "img.jpg", "", m);
+};
+
+handler.help = ["boy", "girl"];
+handler.tags = ["image", "random"];
+handler.command = /^(boy|girl|woman|lady|model)$/i;
+
+module.exports = handler;

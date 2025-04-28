@@ -1,69 +1,73 @@
-const fetch = require('node-fetch');
+const fetch = require("node-fetch");
 
-const translateResult = async (hasil) => {
-    const fromLang = 'en';
-    const toLang = 'id';
-    const url = `https://tr.deployers.repl.co/translate?from=${fromLang}&to=${toLang}&text=${encodeURIComponent(hasil)}`;
+const translateResult = async (result) => {
+  const fromLang = "en";
+  const toLang = "id";
+  const url = `https://tr.deployers.repl.co/translate?from=${fromLang}&to=${toLang}&text=${encodeURIComponent(
+    result
+  )}`;
 
-    try {
-        const response = await fetch(url);
-        const data = await response.json();
-        return data.translated_text; // Get the translated_text field from the response JSON
-    } catch (e) {
-        console.error(e);
-        throw 'Terjadi kesalahan saat menerjemahkan hasil';
-    }
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
+    return data.translated_text;
+  } catch (e) {
+    console.error(e);
+    throw "⚠️ Error while translating the result.";
+  }
 };
 
 const handler = async (m, { conn, args }) => {
-    if (args.length < 1) {
-        throw 'Masukkan data tensi dan hb dengan format: .cekdarah tensi|hb';
-    }
+  if (args.length < 1) {
+    throw "⚠️ Please enter your blood pressure and hemoglobin in the format:\n\n.cekdarah blood_pressure|hb";
+  }
 
-    // Mendapatkan data tensi dan hb dari argumen
-    const [tensi, hb] = args[0].split('|');
+  const [tensi, hb] = args[0].split("|");
+  const url = `https://tr.deployers.repl.co/bp?tensi=${tensi}&hb=${hb}`;
 
-    // Membuat URL dengan menggunakan data tensi dan hb
-    const url = `https://tr.deployers.repl.co/bp?tensi=${tensi}&hb=${hb}`;
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
 
-    try {
-        // Melakukan permintaan HTTP GET ke URL
-        const response = await fetch(url);
-        const data = await response.json();
+    const author = data.Author;
+    const hasil = data.Hasil;
+    const hbValue = data.Hb;
+    const tensiValue = data.Tensi;
+    const parameter = data.parameter;
 
-        // Mengambil semua data dari objek JSON
-        const author = data.Author;
-        const hasil = data.Hasil;
-        const hbValue = data.Hb;
-        const tensiValue = data.Tensi;
-        const parameter = data.parameter;
+    const translatedResult = await translateResult(hasil);
 
-        // Mendapatkan hasil terjemahan
-        const translatedHasil = await translateResult(hasil);
+    const yourNumber = "YOUR-NUMBER-HERE"; // <- Replace with your actual donation number
 
-        // Menampilkan data yang diambil sebagai balasan
+    const caption = `
+*🩸 Blood Check Result 🩸*
 
-        const mySecret = "NOMER KALIAN"
+👤 Author: ${author}
 
-        const caption = `
-Author: ${author}\n
-_Hasil: ${hasil}_
-*Hasil Terjemahan: ${translatedHasil}*
-Hb: ${hbValue}
-Tensi: ${tensiValue}\n
-Parameter: ${parameter}\n\n
-Donate: https://tr.deployers.repl.co/images\nDana: ${mySecret}
-        `;
+📋 Result: _${hasil}_
+🌎 Translation: *${translatedResult}*
 
-        conn.reply(m.chat, caption, m);
-    } catch (e) {
-        console.error(e);
-        throw 'Terjadi kesalahan saat mengambil data dari server';
-    }
+🧪 Hb Level: ${hbValue}
+🩺 Blood Pressure: ${tensiValue}
+
+📈 Parameter: ${parameter}
+
+---
+
+☕ Support us:
+- Donate: https://tr.deployers.repl.co/images
+- Dana: ${yourNumber}
+        `.trim();
+
+    conn.reply(m.chat, caption, m);
+  } catch (e) {
+    console.error(e);
+    throw "⚠️ Error while retrieving data from server.";
+  }
 };
 
-handler.help = ['cekdarah tensi|hb'];
-handler.tags = ['tools'];
+handler.help = ["cekdarah <blood_pressure>|<hb>"];
+handler.tags = ["tools"];
 handler.command = /^cekdarah$/i;
 
 module.exports = handler;

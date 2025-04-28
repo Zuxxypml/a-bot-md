@@ -1,7 +1,7 @@
-const { randomBytes } = require('crypto');
-const fetch = require('node-fetch');
-const FormData = require('form-data');
-const Anthropic = require('@anthropic-ai/sdk');
+const { randomBytes } = require("crypto");
+const fetch = require("node-fetch");
+const FormData = require("form-data");
+const Anthropic = require("@anthropic-ai/sdk");
 
 let handler = async (m, { conn, text, usedPrefix, command }) => {
   const apikey = () => {
@@ -13,7 +13,7 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
       "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",
       "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",
       "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",
-      "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"
+      "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",
     ];
     return antro[Math.floor(Math.random() * antro.length)];
   };
@@ -24,7 +24,7 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
 
     let response = await fetch("https://uguu.se/upload.php", {
       method: "POST",
-      body: data
+      body: data,
     });
 
     let res = await response.json();
@@ -34,7 +34,9 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
   const anthropic = new Anthropic({ apiKey: apikey() });
 
   if (!m.quoted && !text) {
-    m.reply("Mohon reply pesan dengan gambar atau ketik teks untuk menghasilkan pesan.");
+    m.reply(
+      "Please reply to a message with an image or type text to generate a response."
+    );
     return;
   }
 
@@ -61,12 +63,12 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
                 source: {
                   type: "base64",
                   media_type: m.quoted.mimetype,
-                  data: base64Data
-                }
-              }
-            ]
-          }
-        ]
+                  data: base64Data,
+                },
+              },
+            ],
+          },
+        ],
       });
     } else {
       msg = await anthropic.messages.create({
@@ -77,9 +79,9 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
         messages: [
           {
             role: "user",
-            content: [{ type: "text", text: text || "" }]
-          }
-        ]
+            content: [{ type: "text", text: text || "" }],
+          },
+        ],
       });
     }
 
@@ -90,8 +92,8 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
   }
 };
 
-handler.help = ['claude [teks]'];
-handler.tags = ['ai'];
-handler.command = ['claude'];
+handler.help = ["claude [text]"];
+handler.tags = ["ai"];
+handler.command = ["claude"];
 
 module.exports = handler;

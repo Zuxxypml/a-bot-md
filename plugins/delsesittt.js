@@ -1,23 +1,25 @@
 let handler = async (m, { conn, text }) => {
-    conn.game = conn.game ? conn.game : {}
-    try {
-        if (conn.game) {
-            delete conn.game
-            conn.reply(m.chat, `Berhasil delete session ttt`, m)
-        } else if (conn.game) {
-            m.reply(`Session ttt🎮 tidak ada`)
-        } else throw '?'
-    } catch (e) {
-        m.reply('rusak')
+  conn.game = conn.game ? conn.game : {};
+
+  try {
+    if (conn.game) {
+      delete conn.game;
+      conn.reply(m.chat, `Successfully deleted Tic Tac Toe (ttt) session.`, m);
+    } else {
+      m.reply(`No Tic Tac Toe (ttt) session found.`);
     }
-}
-//BY RIZXYU
-handler.help = ['delttt']
-handler.tags = ['game']
-handler.command = /^(del(sesi)?ttt|dellsesitt)$/i
-handler.limit = true
+  } catch (e) {
+    m.reply("Error deleting session.");
+  }
+};
 
-handler.register = true
-handler.fail = null
+// BY RIZXYU
+handler.help = ["delttt"];
+handler.tags = ["game"];
+handler.command = /^(del(sesi)?ttt|dellsesitt)$/i;
+handler.limit = true;
 
-module.exports = handler
+handler.register = true;
+handler.fail = null;
+
+module.exports = handler;

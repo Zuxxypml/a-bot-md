@@ -1,108 +1,113 @@
-let cheerio = require('cheerio');
-let fetch = require('node-fetch');
+let cheerio = require("cheerio");
+let fetch = require("node-fetch");
 
-let handler = async (m, {
-    conn,
-    args,
-    usedPrefix,
-    text,
-    command
-}) => {
+let handler = async (m, { conn, args, usedPrefix, text, command }) => {
+  const features = ["search", "read"];
+  let [feature, input] = text.split("|").map((v) => v.trim());
 
-    let lister = [
-        "search",
-        "read"
-    ]
+  if (!features.includes(feature)) {
+    return m.reply(
+      `[ ! ] *Example usage:* ${usedPrefix}${command} search|kancil\n\n*Available Features:*\n` +
+        features.map((v) => ` — ${v}`).join("\n")
+    );
+  }
 
-    let [feature, inputs, inputs_, inputs__, inputs___] = text.split("|")
-    if (!lister.includes(feature)) return m.reply("[ ! ] *example:* .dongeng search|kancil\n\n*all Type*\n" + lister.map((v, index) => " — " + v).join("\n"))
-
-    if (lister.includes(feature)) {
-
-        if (feature == "search") {
-        if (!inputs) return m.reply("[ ! ] *example:* .dongeng search|kancil")
-            await m.reply(wait)
-            try {
-                let res = await searchDongeng(inputs)
-                let teks = res.map((item, index) => {
-                    return `🔍 *[ RESULT ${index + 1} ]*
+  if (feature === "search") {
+    if (!input)
+      return m.reply(
+        `[ ! ] *Example usage:* ${usedPrefix}${command} search|kancil`
+      );
+    await m.reply("_Searching, please wait..._");
+    try {
+      let res = await searchDongeng(input);
+      let teks = res
+        .map((item, index) => {
+          return `🔍 *[ Result ${index + 1} ]*
 
 📚 Title: ${item.entryTitle}
 🔗 Link: ${item.link}
-📝 Summary: ${item.entrySummary}
-  `
-                }).filter(v => v).join("\n\n\n")
-                await m.reply(teks)
-            } catch (error) {
-    console.error(error);
-    m.reply(`Failed to progresing. Please try again later: ${error}`);
+📝 Summary: ${item.entrySummary}`;
+        })
+        .filter(Boolean)
+        .join("\n\n\n");
+      await m.reply(teks || "No results found.");
+    } catch (error) {
+      console.error(error);
+      m.reply(
+        `Failed to process request. Please try again later.\n\nError: ${error}`
+      );
+    }
   }
-        }
 
-        if (feature == "read") {
-            if (!inputs) return m.reply("[ ! ] *example:* .dongeng read|link")
-            await m.reply(wait)
-            try {
-                let item = await readDongeng(inputs)
-                let cap = `🔍 *[ RESULT ]*
+  if (feature === "read") {
+    if (!input)
+      return m.reply(
+        `[ ! ] *Example usage:* ${usedPrefix}${command} read|link`
+      );
+    await m.reply("_Reading story, please wait..._");
+    try {
+      let item = await readDongeng(input);
+      let caption = `🔍 *[ Result ]*
 
 📰 *Title:* ${item.title}
 🖼️ *Thumbnail:* ${item.image}
 📌 *Category:* ${item.cat}
 🏷️ *Tag:* ${item.tag}
 📝 *Content:* ${cleanText(item.content)}
-👤 *Author Name:* ${item.author}
-📝 *Date:* ${item.date}
-`
-                await conn.sendFile(m.chat, item.image, "", cap, m)
+👤 *Author:* ${item.author}
+🗓️ *Date:* ${item.date}`;
 
-            } catch (error) {
-    console.error(error);
-    m.reply(`Failed to progresing. Please try again later: ${error}`);
-  }
-        }
+      await conn.sendFile(m.chat, item.image, "", caption, m);
+    } catch (error) {
+      console.error(error);
+      m.reply(
+        `Failed to process request. Please try again later.\n\nError: ${error}`
+      );
     }
-}
-handler.help = ["dongeng search|<title>","dongeng read|<link>"]
-handler.tags = ["internet"]
-handler.command = /^(dongeng)$/i
-handler.limit = true
-module.exports = handler
+  }
+};
 
-/* New Line */
+handler.help = ["dongeng search|<title>", "dongeng read|<link>"];
+handler.tags = ["internet"];
+handler.command = /^(dongeng)$/i;
+handler.limit = true;
+
+module.exports = handler;
+
+/* Helper Functions */
 
 function cleanText(html) {
-    const regex = /<[^>]+>/g;
-    return html.replace(regex, "");
+  const regex = /<[^>]+>/g;
+  return html.replace(regex, "").trim();
 }
 
-async function searchDongeng(q) {
+async function searchDongeng(query) {
   try {
-  	const url = 'https://dongengceritarakyat.com/?s=' + q; // Ganti dengan URL halaman web yang ingin Anda crawl
+    const url =
+      "https://dongengceritarakyat.com/?s=" + encodeURIComponent(query);
     const response = await fetch(url);
     const body = await response.text();
     const $ = cheerio.load(body);
     const results = [];
 
-    $('article').each((index, element) => {
+    $("article").each((index, element) => {
       const article = $(element);
-      const result = {
-        entryTitle: article.find('.entry-title a').text(),
-        link: article.find('.entry-title a').attr('href'),
-        imageSrc: article.find('.featured-image amp-img').attr('src'),
-        entrySummary: article.find('.entry-summary').text(),
-        footerTag: article.find('.cat-links a').text(),
-        from: article.find('.tags-links a').text()
-      };
-      results.push(result);
+      results.push({
+        entryTitle: article.find(".entry-title a").text().trim(),
+        link: article.find(".entry-title a").attr("href"),
+        imageSrc: article.find(".featured-image amp-img").attr("src"),
+        entrySummary: article.find(".entry-summary").text().trim(),
+        footerTag: article.find(".cat-links a").text().trim(),
+        from: article.find(".tags-links a").text().trim(),
+      });
     });
 
     return results;
   } catch (error) {
-    console.error('Error:', error);
+    console.error("Error during search:", error);
     return [];
   }
-};
+}
 
 async function readDongeng(url) {
   const response = await fetch(url);
@@ -110,12 +115,12 @@ async function readDongeng(url) {
   const $ = cheerio.load(html);
 
   return {
-    image: $('div.featured-image amp-img').attr('src'),
-    title: $('h1.entry-title').text(),
-    date: $('span.posted-date').text(),
-    author: $('span.posted-author a').text(),
-    content: $('div.entry-content').text(),
-    tag: $('span.tags-links a').text(),
-    cat: $('span.cat-links a').text(),
+    image: $("div.featured-image amp-img").attr("src"),
+    title: $("h1.entry-title").text().trim(),
+    date: $("span.posted-date").text().trim(),
+    author: $("span.posted-author a").text().trim(),
+    content: $("div.entry-content").html() || "",
+    tag: $("span.tags-links a").text().trim(),
+    cat: $("span.cat-links a").text().trim(),
   };
 }

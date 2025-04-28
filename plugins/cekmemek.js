@@ -1,25 +1,43 @@
 let handler = async (m, { conn, command, text }) => {
-	
-    if (!text) return conn.reply(m.chat, 'Ketik Namanya Tolol!', m)
-	
-  conn.reply(m.chat, `
-╭━━━━°「 *Memek ${text}* 」°
-┃
-┊• Nama : ${text}
-┃• memek : ${pickRandom(['ih item','Belang wkwk','Muluss','Putih Mulus','Black Doff','Pink wow','Item Glossy'])}
-┊• lubang : ${pickRandom(['perawan','ga perawan','udah pernah dimasukin','masih rapet','tembem'])}
-┃• jembut : ${pickRandom(['lebat','ada sedikit','gada jembut','tipis','muluss'])}
-╰═┅═━––––––๑
-`.trim(), m)
-}
-handler.help = ['cekmemek <nama>']
-handler.tags = ['fun']
-handler.command = /^cekmemek/i
-handler.premium = false
-handler.limit = false
+  if (!text) return conn.reply(m.chat, "Enter the name, idiot!", m);
 
-module.exports = handler 
+  conn.reply(
+    m.chat,
+    `
+╭━━━━°「 *Vagina Check ${text}* 」°
+┃
+┊• Name: ${text}
+┃• Vagina: ${pickRandom([
+      "Ugh, dark",
+      "Spotted lol",
+      "Smooth",
+      "White and smooth",
+      "Matte black",
+      "Pink wow",
+      "Glossy black",
+    ])}
+┊• Hole: ${pickRandom([
+      "Virgin",
+      "Not a virgin",
+      "Has been used",
+      "Still tight",
+      "Plump",
+    ])}
+┃• Pubes: ${pickRandom(["Thick", "A little bit", "None", "Thin", "Smooth"])}
+╰═┅═━––––––๑
+`.trim(),
+    m
+  );
+};
+
+handler.help = ["cekmemek <nama>"];
+handler.tags = ["fun"];
+handler.command = /^cekmemek/i;
+handler.premium = false;
+handler.limit = false;
+
+module.exports = handler;
 
 function pickRandom(list) {
-  return list[Math.floor(Math.random() * list.length)]
+  return list[Math.floor(Math.random() * list.length)];
 }

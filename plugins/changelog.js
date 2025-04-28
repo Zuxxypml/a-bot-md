@@ -1,6 +1,6 @@
-let handler = async (m, { conn, usedPrefix: p, }) => {
+let handler = async (m, { conn, usedPrefix: p }) => {
   let teks = `  
-  *Perubahan 29 Desember 2021:*
+  *Changes on December 29, 2021:*
 _*New:*_
 Leaderboard:
 leaderboardgroup
@@ -9,332 +9,340 @@ topskatagroup
 topcmd
 
 _*Update:*_
-leaderboard anti tag
-claim levelling
+Leaderboard anti-tag
+Claim leveling
 
 _*Fix:*_
 skata
 semoji
-doubling game
-absen no tag
+Doubling game
+Absence without tag
 
-  *Perubahan 19 November 2021:*
+  *Changes on November 19, 2021:*
 _*New:*_
-Gambar: PPCouple
-Game: Sambung kata
+Image: PPCouple
+Game: Word chain
 
 _*Update:*_
-Jadibot: Set Owner, Setting
-Group: Init setiap chat
+Jadibot: Set Owner, Settings
+Group: Initialize on every chat
 
 _*Fix:*_
-Download: Fb
+Download: Facebook
 
-_*Deleted*_
+_*Deleted:*_
 Download: APK downloader
 
-*Perubahan 22 Oktober 2021:*
+*Changes on October 22, 2021:*
 _*New:*_
-Setting: Game
+Settings: Game
 
-  _*Update:*_
+_*Update:*_
 Sticker: Trigger tag
-  
+
 _*Fix:*_
 layarkaca, animeinfo
 
-*Perubahan 19 Oktober 2021:*
+*Changes on October 19, 2021:*
 _*New:*_
-Maker: Harta tahta custom => *${p}customtahta*
-Tools: Alkitab => *${p}alkitab*
-      Hadis => *${p}hadis*
-      Spamcall => *${p}spamcall*
-Search: Id free fire check => *${p}epep*
-        Animeinfo => *${p}animeinfo*
-        layarkaca => *${p}layarkaca*
-Stiker: dadu => *${p}dadu*
-Fun: Nama Purba => *${p}purba*
+Maker: Custom throne wealth => *${p}customtahta*
+Tools: Bible => *${p}alkitab*
+      Hadith => *${p}hadis*
+      Spam call => *${p}spamcall*
+Search: Free Fire ID check => *${p}epep*
+        Anime info => *${p}animeinfo*
+        Layarkaca => *${p}layarkaca*
+Sticker: Dice => *${p}dadu*
+Fun: Ancient name => *${p}purba*
 Media downloader: Joox Music => *${p}joox*
 
-  _*Update:*_
-Sticker: Stiker Emoji => *${p}semoji*
-Regiter & unregister
-Antilink group
-Auto kick send bug gc
+_*Update:*_
+Sticker: Emoji sticker => *${p}semoji*
+Register & unregister
+Group antilink
+Auto-kick for sending group bugs
 
 _*Fix:*_
-Fun: simi chat => *${p}simi*
+Fun: Simi chat => *${p}simi*
 Game: delttt, suit, bisakah, apakah, kapankah
 Search: *${p}tiktokstalk*
 
-*Perubahan 17 Oktober 2021:*
+*Changes on October 17, 2021:*
 
 _*New:*_
-Tools: Kodepos => *${p}kodepos*
+Tools: Postal code => *${p}kodepos*
        Info => *${p}setting*
 
 _*Update:*_
-Downloader: Tiktok caption, IG caption, server
-Maker: Nulis => *${p}nulis*
-Tools: tts, tr bisa langsung reply pesam => *${p}tts*, *${p}tr*
+Downloader: TikTok caption, IG caption, server
+Maker: Write => *${p}nulis*
+Tools: TTS, translation can directly reply to messages => *${p}tts*, *${p}tr*
 
 _*Fix:*_
-Game: tebakkimia => *${p}tebakkimia*
-      Fix bantuan
+Game: Chemical guess => *${p}tebakkimia*
+      Fixed help
+
 ${conn.readmore}
-*Perubahan 15 Oktober 2021:*
+*Changes on October 15, 2021:*
 
 _*Update:*_
-Stiker: smeme, snobg, wasted, trigger dsbg bisa langsung balas stiker
+Sticker: smeme, snobg, wasted, trigger, etc., can directly reply to stickers
 
 _*Fix:*_
-Stiker: attp => *${p}attp*
+Sticker: attp => *${p}attp*
         ttp => *${p}ttp*
-Game: tekateki => *${p}tekateki*
+Game: Riddle => *${p}tekateki*
 
-*Perubahan 06 Oktober 2021:*
+*Changes on October 6, 2021:*
 
 _*Fix:*_
-Stiker: wasted, trigger => *${p}wasted, ${p}trigger*
+Sticker: wasted, trigger => *${p}wasted, ${p}trigger*
 
-*Perubahan 28 September 2021:*
+*Changes on September 28, 2021:*
 
 _*New:*_
-Game suit PvP => *${p}suit*
-Button di game, absen
-Style menu
+Game: Suit PvP => *${p}suit*
+Buttons in games, absence
+Menu style
 
 _*Fix:*_
-Quotes: Bijak => *${p}bijak*
+Quotes: Wise => *${p}bijak*
 Maker: Japan => *${p}japan*
-Stiker: meme => *${p}smeme*
-Optimasi teks tiap fitur
-Merapikan menu
+Sticker: Meme => *${p}smeme*
+Optimized text for each feature
+Cleaned up menu
 
-*Perubahan 22 Juli 2021:*
-● add vn di bbrp fitur
-● Update *${p}enable* 
-● Fix bug levelup & role
-● Fix some bug
+*Changes on July 22, 2021:*
+● Added voice notes to some features
+● Updated *${p}enable*
+● Fixed bug in level-up & role
+● Fixed some bugs
 
-*Perubahan 18 Juli 2021:*
-● Fix *${p}pinterest*
+*Changes on July 18, 2021:*
+● Fixed *${p}pinterest*
 
-*Perubahan 16 Juli 2021:*
-● in *${p}Menu Game*
+*Changes on July 16, 2021:*
+● In *${p}Menu Game*
   => New *${p}tekateki*
-     Fix *${p}tebaklagu*
-● Call maximum 3x
-● Update *${p}*enable
+     Fixed *${p}tebaklagu*
+● Maximum 3 calls
+● Updated *${p}enable*
 
-*Perubahan 14 Juli 2021:*
-● Add *${p}Menu Kelas*
-  => Add vote, absen
-● Add *${p}wikipedia*
-● Add *${p}kbbi*
-● Add *${p}scan*
+*Changes on July 14, 2021:*
+● Added *${p}Menu Class*
+  => Added vote, absence
+● Added *${p}wikipedia*
+● Added *${p}kbbi*
+● Added *${p}scan*
 
-*Perubahan 8 Juli 2021:*
-● Add Role in profile (beta)
-● Add level limit
-● Add *${p}role*
-● Add *${p}groupinfo*
-● Add *${p}togif*
-● Add *${p}toimg2*
-● Add *${p}stickerline*
-● Update gif *${p}sticker*
-● Add some in menu owner
+*Changes on July 8, 2021:*
+● Added Role in profile (beta)
+● Added level limit
+● Added *${p}role*
+● Added *${p}groupinfo*
+● Added *${p}togif*
+● Added *${p}toimg2*
+● Added *${p}stickerline*
+● Updated GIF in *${p}sticker*
+● Added some features in owner menu
 
-*Perubahan 5 Juli 2021:*
-● Fix welcome: send photo
-● Fix *${p}igstory*
-● Change, update=> *${p}daftarulang*
-  Bisa ganti nama :v
+*Changes on July 5, 2021:*
+● Fixed welcome: send photo
+● Fixed *${p}igstory*
+● Changed, updated => *${p}daftarulang*
+  Can change name :v
 
-● Update auto *${p}steal*
-● Add *${p}menu editor*
-● Add *${p}menu penyimpanan*
-● in Premium => Auto steal in sticker (get name)
+● Updated auto *${p}steal*
+● Added *${p}menu editor*
+● Added *${p}menu storage*
+● In Premium => Auto steal in sticker (get name)
 
-*Perubahan 4 Juli 2021:*
-● Update *${p}stickerwa*
+*Changes on July 4, 2021:*
+● Updated *${p}stickerwa*
 
+*Changes on July 3, 2021:*
+● Added in group *${p}setpp*
+● Updated pricing for *${p}sewabot/premium*
+● Updated *${p}ytmp4*
+● Fixed *${p}bctime*
 
-*Perubahan 3 Juli 2021:*
-● Add in group *${p}setpp*
-● Update harga *${p}sewabot/premium*
-● Update *${p}ytmp4*
-● Fix *${p}bctime* 
+*Changes on July 2, 2021:*
+● In Menu game =>
+  Added *${p}tebakkimia*
+  Added *${p}tebakanime*
 
-*Perubahan 2 Juli 2021:*
-● in Menu game => 
-  Add *${p}tebakkimia*
-  Add *${p}tebakanime*
+*Changes on July 1, 2021:*
+● Updated *${p}ytmp4* =>
+ Custom resolution
+● Updated Welcome
+● Restored *${p}menu owner*
+● *${p}setcmd* only for Premium
+● Fixed *${p}play*
 
-*Perubahan 1 Juli 2021:*
-● Update *${p}ytmp4* => 
- custom resolusi
- ● Update Welcome
- ● Restore *${p}menu owner*
- ● *${p}setcmd* hanya untuk Premium
- ● fix *${p}play*
-
-*Perubahan 30 Juni 2021:*
-● New referal code bot => *${p}ref*
-● Add *${p}Revoke* (reset link)
-● Add *${p}tomp3*
-● Add Desc Group in welcome 
+*Changes on June 30, 2021:*
+● New referral code bot => *${p}ref*
+● Added *${p}Revoke* (reset link)
+● Added *${p}tomp3*
+● Added Group Description in welcome
    *${p}setwelcome*
-● Update url youtube story in *${p}yt*
-● Update *${p}semoji*
-● Fix *${p}ttp*
-● Fix *${p}delcmd*
-● Fix *${p}caklontong*
-● in Menu game => 
-  Add *${p}tebaklirik*
-  Move to group only
-● Auto block if call/vcall
+● Updated YouTube story URL in *${p}yt*
+● Updated *${p}semoji*
+● Fixed *${p}ttp*
+● Fixed *${p}delcmd*
+● Fixed *${p}caklontong*
+● In Menu game =>
+  Added *${p}tebaklirik*
+  Moved to group only
+● Auto block for call/video call
 
- *Perubahan 16 Juni 2021:*
-● New; Perintah dengan media
-● Fix *${p}stickerwa* <pencarian>
-● in Menu gambar => Add
+*Changes on June 16, 2021:*
+● New: Commands with media
+● Fixed *${p}stickerwa* <search>
+● In Menu image => Added
    *${p}bts*
    *${p}exo*
-● Fix *${p}tebakgambar*
-● Detail setelah melakukan AFK
-● Custom bot untuk admin group, bisa mengatur on/off nya bot ( *${p}bot* [on/off]) 
+● Fixed *${p}tebakgambar*
+● Detailed AFK status
+● Custom bot for group admins, can toggle bot on/off (*${p}bot* [on/off])
 
-*Perubahan 13 Juni 2021:*
-● Update Style
-● in Menu gambar => Add
+*Changes on June 13, 2021:*
+● Updated Style
+● In Menu image => Added
    ${p}waifu
    ${p}husbu
    ${p}loli
    ${p}neko
-● Fix ${p}smeme
-● Fix ${p}wallpaperanime
-● Add ${p}ytcomment
-● Add ${p}broadcasttime
-● Add ${p}rules
+● Fixed ${p}smeme
+● Fixed ${p}wallpaperanime
+● Added ${p}ytcomment
+● Added ${p}broadcasttime
+● Added ${p}rules
 
-*Perubahan 5 Juni 2021:*
-● Add Game Baru 
+*Changes on June 5, 2021:*
+● Added New Games
   ${p}asahotak
   ${p}tebakkata
   ${p}susunkata
   (${p}menu game)
-● Fitur ${p}join sudah bisa langsung masuk tanpa konfirmasi owner (khusus premium)
-● Penambahan jumlah ${p}claim untuk user premium
+● Feature ${p}join can now join directly without owner confirmation (for premium users)
+● Increased ${p}claim amount for premium users
 
-*Perubahan 26 Mei 2021:*
-● Add ${p}save nama
-● Fix Anonymous Chat
+*Changes on May 26, 2021:*
+● Added ${p}save name
+● Fixed Anonymous Chat
 
-*Perubahan 21 Mei 2021:*
-● Add ${p}anony chat (cek di menu)
-● Add ${p}setbotpp(owner/jadibot)
-● Add ${p}listpremium
-● Add ${p}getsider(group)
-● Add ${p}upload
-● Add XP jika menang(game Tictactoe)
-● Custom room Tictactoe
-● Add & Optimasi ${p}ping
-● Try fix ${p}tiktok, ig
+*Changes on May 21, 2021:*
+● Added ${p}anony chat (check in menu)
+● Added ${p}setbotpp (owner/jadibot)
+● Added ${p}listpremium
+● Added ${p}getsider (group)
+● Added ${p}upload
+● Added XP for winning (Tictactoe game)
+● Custom Tictactoe room
+● Added & optimized ${p}ping
+● Attempted fix for ${p}tiktok, ig
 ● Other
 
-*Perubahan 16 Mei 2021:*
-● Add game ${p}tictactoe
-● optimasi ${p}translate
-● Add maker ${p}shaunthesheep
+*Changes on May 16, 2021:*
+● Added game ${p}tictactoe
+● Optimized ${p}translate
+● Added maker ${p}shaunthesheep
 
-*Perubahan 11 Mei 2021:*
-● Add && Update ${p}attp, ttp, ttp2-ttp6
-● Add game ${p}caklontong
-● Add game ${p}siapaaku
-● Add fitur ${p}request
-● Fix ${p}enable welcome, setwelcome, setbye
-● Fix ${p}play && some error
-● Update ${p}inspect
-● Optimasi ${p}jadibot
+*Changes on May 11, 2021:*
+● Added & Updated ${p}attp, ttp, ttp2-ttp6
+● Added game ${p}caklontong
+● Added game ${p}siapaaku
+● Added feature ${p}request
+● Fixed ${p}enable welcome, setwelcome, setbye
+● Fixed ${p}play & some errors
+● Updated ${p}inspect
+● Optimized ${p}jadibot
 
-*Perubahan 10 Mei 2021:*
-● Fix ${p}tebakgambar + hd
-● Fix ${p}chord
-● Add ${p}info
-● Optimasi afk
+*Changes on May 10, 2021:*
+● Fixed ${p}tebakgambar + HD
+● Fixed ${p}chord
+● Added ${p}info
+● Optimized AFK
 
-*Perubahan 5 Mei 2021:*
-● Add ${p}tebaklagu (beta)
-● Add ${p}tebakjenaka (beta)
-● Ytmp4 kualitas 720p
+*Changes on May 5, 2021:*
+● Added ${p}tebaklagu (beta)
+● Added ${p}tebakjenaka (beta)
+● Ytmp4 quality 720p
 
-*Perubahan 3 Mei 2021:*
-● Add ${p}trigger
-● Add ${p}semoji
-● Add ${p}ytsearch
-● Add ${p}attp2
-● update ${p}attp
-● Update welcome, bye group
+*Changes on May 3, 2021:*
+● Added ${p}trigger
+● Added ${p}semoji
+● Added ${p}ytsearch
+● Added ${p}attp2
+● Updated ${p}attp
+● Updated welcome, bye group
 
-*Perubahan 1 Mei 2021:*
-● Update fitur ${p}lirik
-● Add ${p}downloadfilm
-● Fix ${p}enable
-● Fix some error
+*Changes on May 1, 2021:*
+● Updated feature ${p}lirik
+● Added ${p}downloadfilm
+● Fixed ${p}enable
+● Fixed some errors
 
-*Perubahan 25 April 2021:*
-● Add fitur ${p}ttp3
-● Add ${p}enable autolevelup
-● Add ${p}inspect linkgroup chat.whatsapp.com
-● Add ${p}info
-● Add ${p}rules
-● Optimasi ${p}limit
+*Changes on April 25, 2021:*
+● Added feature ${p}ttp3
+● Added ${p}enable autolevelup
+● Added ${p}inspect linkgroup chat.whatsapp.com
+● Added ${p}info
+● Added ${p}rules
+● Optimized ${p}limit
 
-*Perubahan 22 April 2021:*
-● Update ${p}snobg
-● Add Fitur ${p}tiktokstalk
-● Fix error IG, Tiktok,
+*Changes on April 22, 2021:*
+● Updated ${p}snobg
+● Added Feature ${p}tiktokstalk
+● Fixed errors in IG, TikTok
 
-*Perubahan 20 April 2021:*
-● Update optimasi Menu
-● Add Fitur ${p}wait
-  Mencari judul anime berdasarkan gambar
-● Penambahan alternatif ${p}ig2
+*Changes on April 20, 2021:*
+● Updated & optimized Menu
+● Added Feature ${p}wait
+  Search anime title based on image
+● Added alternative ${p}ig2
 
-*Perubahan 17 April 2021:*
-● Update fitur ${p}getvn
-	
-*Perubahan 15 April 2021:*
-● Update fitur ${p}ttp, ${p}ttp2
-● Add fitur ${p}sgay
-● Optimasi Menu
+*Changes on April 17, 2021:*
+● Updated feature ${p}getvn
 
-*Perubahan 14 April 2021:*
-● Fitur ${p}sc 
-  stiker lingkaran 
-● Fitur ${p}tovideo
-  stiker gif ke video
+*Changes on April 15, 2021:*
+● Updated features ${p}ttp, ${p}ttp2
+● Added feature ${p}sgay
+● Optimized Menu
 
-*Perubahan 12 April 2021:*
-● Fitur ${p}translate  
-  
-*Perubahan 11 April 2021:*
-● Fitur ${p}meme (perbaikan)
-● Fitur ${p}darkjoke
-● Fitur ${p}twitter
-● Fitur ${p}cuaca
+*Changes on April 14, 2021:*
+● Feature ${p}sc
+  Circular sticker
+● Feature ${p}tovideo
+  GIF sticker to video
 
-*Perubahan 10 April 2021:*
-● Fitur ${p}chord 
-● Fitur ${p}wiki
-● Fitur ${p}ramaljodoh
-● Fitur ${p}Jadwalsholat
-● Fitur ${p}quotes
-● Tiktok tanpa watermark(${p}tiktok)
+*Changes on April 12, 2021:*
+● Feature ${p}translate
+
+*Changes on April 11, 2021:*
+● Feature ${p}meme (improved)
+● Feature ${p}darkjoke
+● Feature ${p}twitter
+● Feature ${p}cuaca
+
+*Changes on April 10, 2021:*
+● Feature ${p}chord
+● Feature ${p}wiki
+● Feature ${p}ramaljodoh
+● Feature ${p}Jadwalsholat
+● Feature ${p}quotes
+● TikTok without watermark (${p}tiktok)
 ● Anime download (${p}anime)
-`.trim()
-  conn.fakeReply(m.chat, teks, '0@s.whatsapp.net', '*Perubahan/Changelog/Update Levi BOT*', 'status@broadcast')
-}
-handler.command = /^baru$/i
-module.exports = handler
+`.trim();
+  conn.fakeReply(
+    m.chat,
+    teks,
+    "0@s.whatsapp.net",
+    "*Changes/Changelog/Update Levi BOT*",
+    "status@broadcast"
+  );
+};
+
+handler.command = /^baru$/i;
+
+module.exports = handler;

@@ -1,107 +1,114 @@
 let handler = async (m, { text, usedPrefix, command }) => {
-if (!text) throw "*Ketik nama lu!.. 😛*"
-    
-     const khodam = ['Kaleng Cat Avian',
-	  'Pipa Rucika',
-	  'Botol Tupperware',
-	  'Badut Mixue',
-	  'Sabun GIV',
-	  'Sandal Swallow',
-	  'Jarjit',
-	  'Ijat',
-	  'Fizi',
-	  'Mail',
-	  'Ehsan',
-	  'Upin',
-	  'Ipin',
-	  'sungut lele',
-	  'Tok Dalang',
-	  'Opah',
-	  'Alul',
-	  'Pak Vinsen',
-	  'Maman Resing',
-	  'Pak RT',
-	  'Admin ETI',
-	  'Bung Towel',
-	  'Lumpia Basah',
-	  'Martabak Manis',
-	  'Baso Tahu',
-	  'Tahu Gejrot',
-	  'Dimsum',
-	  'Seblak Ceker',
-	  'Telor Gulung',
-	  'Tahu Aci',
-	  'Tempe Mendoan',
-	  'Nasi Kucing',
-	  'Kue Cubit',
-	  'Tahu Sumedang',
-	  'Nasi Uduk',
-	  'Wedang Ronde',
-	  'Kerupuk Udang',
-	  'Cilok',
-	  'Cilung',
-	  'Kue Sus',
-	  'Jasuke',
-	  'Seblak Makaroni',
-	  'Sate Padang',
-	  'Sayur Asem',
-	  'Kromboloni',
-	  'Marmut Pink',
-	  'Belalang Mullet',
-	  'Kucing Oren',
-	  'Lintah Terbang',
-	  'Singa Paddle Pop',
-	  'Macan Cisewu',
-	  'Vario Mber',
-	  'Beat Mber',
-	  'Supra Geter',
-	  'Oli Samping',
-	  'Knalpot Racing',
-	  'Jus Stroberi',
-	  'Jus Alpukat',
-	  'Alpukat Kocok',
-	  'Es Kopyor',
-	  'Es Jeruk',
-	  'Cappucino Cincau',
-	  'Jasjus Melon',
-	  'Teajus Apel',
-	  'Pop ice Mangga',
-	  'Teajus Gulabatu',
-	  'Air Selokan',
-	  'Air Kobokan',
-	  'TV Tabung',
-	  'Keran Air',
-	  'Tutup Panci',
-	  'Kotak Amal',
-	  'Tutup Termos',
-	  'Tutup Botol',
-	  'Kresek Item',
-	  'Kepala Casan',
-	  'Ban Serep',
-	  'Kursi Lipat',
-	  'Kursi Goyang',
-	  'Kulit Pisang',
-	  'Warung Madura',
-	  'Gorong-gorong',
-     'Ikan lele',
-     'Toren air',
-     'PVC-Paralon'
-	];
-    const rkhodam= await getRandomItem(khodam);
-  conn.reply(m.chat,`
-╭━━━━°「 *Cekkodam* 」°
+  if (!text) throw "*Enter your name! 😛*";
+
+  const khodam = [
+    "Avian Paint Can",
+    "Rucika Pipe",
+    "Tupperware Bottle",
+    "Mixue Clown",
+    "GIV Soap",
+    "Swallow Sandal",
+    "Jarjit",
+    "Ijat",
+    "Fizi",
+    "Mail",
+    "Ehsan",
+    "Upin",
+    "Ipin",
+    "Catfish Whisker",
+    "Tok Dalang",
+    "Opah",
+    "Alul",
+    "Mr. Vinsen",
+    "Maman Racing",
+    "Mr. RT",
+    "ETI Admin",
+    "Bung Towel",
+    "Wet Lumpia",
+    "Sweet Martabak",
+    "Tofu Meatball",
+    "Gejrot Tofu",
+    "Dimsum",
+    "Seblak Chicken Feet",
+    "Egg Roll",
+    "Tahu Aci",
+    "Mendoan Tempe",
+    "Cat Rice",
+    "Pinch Cake",
+    "Sumedang Tofu",
+    "Uduk Rice",
+    "Ronde Drink",
+    "Shrimp Crackers",
+    "Cilok",
+    "Cilung",
+    "Cream Puff",
+    "Jagung Susu Keju",
+    "Macaroni Seblak",
+    "Padang Satay",
+    "Sour Vegetable Soup",
+    "Kromboloni",
+    "Pink Guinea Pig",
+    "Mullet Grasshopper",
+    "Orange Cat",
+    "Flying Leech",
+    "Paddle Pop Lion",
+    "Cisewu Tiger",
+    "Vario Mber",
+    "Beat Mber",
+    "Supra Geter",
+    "Side Oil",
+    "Racing Muffler",
+    "Strawberry Juice",
+    "Avocado Juice",
+    "Shaken Avocado",
+    "Kopyor Ice",
+    "Orange Ice",
+    "Cappuccino Grass Jelly",
+    "Melon Jasjus",
+    "Apple Teajus",
+    "Mango Pop Ice",
+    "Rock Sugar Teajus",
+    "Gutter Water",
+    "Dishwater",
+    "Tube TV",
+    "Water Faucet",
+    "Pan Lid",
+    "Charity Box",
+    "Thermos Cap",
+    "Bottle Cap",
+    "Black Plastic Bag",
+    "Charger Head",
+    "Spare Tire",
+    "Folding Chair",
+    "Rocking Chair",
+    "Banana Peel",
+    "Madura Stall",
+    "Sewer Pipe",
+    "Catfish",
+    "Water Tank",
+    "PVC Pipe",
+  ];
+
+  const rkhodam = await getRandomItem(khodam);
+  conn.reply(
+    m.chat,
+    `
+╭━━━━°「 *Khodam Check* 」°
 ┃
-┊• *Nama :* ${text}
-┃• *Khodam :* ${rkhodam}
+┊• *Name:* ${text}
+┃• *Khodam:* ${rkhodam}
 ╰═┅═━––––––๑
-	  `,m);
-  }
-handler.command = handler.help = ['cekkhodam'];
-handler.tags = ['fun'];
+  `,
+    m
+  );
+};
+
+handler.command = handler.help = ["cekkhodam"];
+handler.tags = ["fun"];
 handler.premium = false;
 module.exports = handler;
 
 function getRandomItem(array) {
-    const randomIndex = Math.floor(Math.random() * array.length);
-    return array[randomIndex];
+  const randomIndex = Math.floor(Math.random() * array.length);
+  return array[randomIndex];
 }
