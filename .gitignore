@@ -1,0 +1,11 @@
+node_modules/
+package-lock.json
+tmp
+scrape
+session
+database.json
+plugins/jadibot/
+.vs
+temp_script.py
+hd_video
+lib/claudeapikey.json
