@@ -1,85 +1,76 @@
-const fs = require('fs');
+const fs = require("fs");
 
 let handler = async (m, { conn, text, usedPrefix, command }) => {
-    try {
-        let json = JSON.parse(fs.readFileSync('./src/premium.json'));
-        let who;
-        delete require.cache[require.resolve('../config')];
-        require('../config');
+  try {
+    let json = JSON.parse(fs.readFileSync("./src/premium.json"));
+    let who;
+    delete require.cache[require.resolve("../config")];
+    require("../config");
 
-        let [num, long] = text.split('|');
-        if (!num || isNaN(long)) throw `Masukkan angka mewakili jumlah hari !\n*Misal : ${usedPrefix + command + ' ' + owner[0]} | 30*`;
+    let [num, days] = text.split("|");
+    if (!num || isNaN(days))
+      throw `Enter a number to represent the number of days!\n\nExample:\n*${
+        usedPrefix + command
+      } ${owner[0]} | 30*`;
 
-        if (m.isGroup) who = (m.mentionedJid ? m.mentionedJid[0] : m.quoted ? m.quoted.sender : num.replace(/[^0-9]/g, '') + '@s.whatsapp.net').trim();
-        else who = num ? num.replace(/[^0-9]/g, '') + '@s.whatsapp.net' : m.chat;
-
-        let long_time = 86400000 * long.trim();
-        if (json.includes(who.split`@`[0])) throw `${conn.getName(who, { withoutContact: true })} sudah premium`;
-
-        json.push(`${who.split`@`[0]}`);
-        fs.writeFileSync('./src/premium.json', JSON.stringify(json));
-
-        m.reply(`✅Berhasil menambahkan ${await conn.getName(who, { withoutContact: true })} sebagai member premium selama ${long} Hari`);
-        
-        conn.sendButton(who, `Hai @${who.split`@`[0]}
-
-Selamat bergabung di _Member Premium_
-`.trim(), `Nikmati fitur-fitur yang ada di premium:
-
-${usedPrefix}join <link> => Untuk menambahkan bot ke dalam grup melalui link
-${usedPrefix}jadibot => Untuk menjadikan kamu sebagai bot
-
-Selengkapnya klik di Menu Premium`.trim(), 1, [`Menu Premium`, `${usedPrefix}menu premium`], 0, { contextInfo: { mentionedJid: [who] } });
-
-        global.db.data.users[who].premdate = new Date() * 1 + long_time;
-        delete require.cache[require.resolve('../config')];
-        require('../config');
-    } catch (e) {
-        console.error(e);
-        m.reply(`Terjadi kesalahan saat menambahkan premium member: ${e}`);
+    if (m.isGroup) {
+      who = (
+        m.mentionedJid
+          ? m.mentionedJid[0]
+          : m.quoted
+          ? m.quoted.sender
+          : num.replace(/[^0-9]/g, "") + "@s.whatsapp.net"
+      ).trim();
+    } else {
+      who = num ? num.replace(/[^0-9]/g, "") + "@s.whatsapp.net" : m.chat;
     }
+
+    let duration = 86400000 * days.trim(); // 1 day = 86400000 ms
+
+    if (json.includes(who.split`@`[0]))
+      throw `${await conn.getName(who, {
+        withoutContact: true,
+      })} is already a premium member.`;
+
+    json.push(`${who.split`@`[0]}`);
+    fs.writeFileSync("./src/premium.json", JSON.stringify(json));
+
+    m.reply(
+      `✅ Successfully added ${await conn.getName(who, {
+        withoutContact: true,
+      })} as a Premium Member for ${days} day(s)!`
+    );
+
+    conn.sendButton(
+      who,
+      `Hello @${who.split`@`[0]}!
+
+Welcome to _Premium Membership_!
+`.trim(),
+      `Enjoy exclusive Premium features:
+
+- ${usedPrefix}join <group link> ➔ Add the bot into a group using a link.
+- ${usedPrefix}jadibot ➔ Become a bot temporarily.
+
+Check more features under the Premium Menu.`,
+      1,
+      [`Premium Menu`, `${usedPrefix}menu premium`],
+      0,
+      { contextInfo: { mentionedJid: [who] } }
+    );
+
+    global.db.data.users[who].premdate = new Date() * 1 + duration;
+    delete require.cache[require.resolve("../config")];
+    require("../config");
+  } catch (e) {
+    console.error(e);
+    m.reply(`An error occurred while adding the premium member: ${e}`);
+  }
 };
 
-handler.help = ['addprem [@user]'];
-handler.tags = ['owner'];
+handler.help = ["addprem [@user|days]"];
+handler.tags = ["owner"];
 handler.command = /^(add|tambah|\+)prem$/i;
 handler.rowner = true;
 
 module.exports = handler;
-/*
-let fs = require('fs')
-let handler = async (m, { conn, text, usedPrefix, command }) => {
-    let json = JSON.parse(fs.readFileSync('./src/premium.json'))
-    let who
-    delete require.cache[require.resolve('../config')]
-    require('../config')
-    let [num, long] = text.split`|`
-    if (!num || isNaN(long)) throw `Masukkan angka mewakili jumlah hari !\n*Misal : ${usedPrefix + command + ' ' + owner[0]} | 30*`
-    if (m.isGroup) who = (m.mentionedJid ? m.mentionedJid[0] : m.quoted ? m.quoted.sender : num.replace(/[^0-9]/g, '') + '@s.whatsapp.net').trim()
-    else who = num ? num.replace(/[^0-9]/g, '') + '@s.whatsapp.net' : m.chat
-    let long_time = 86400000 * long.trim()
-    if (json.includes(who.split`@`[0])) throw `${conn.getName(who, { withoutContact: true })} sudah premium`
-    json.push(`${who.split`@`[0]}`)
-    fs.writeFileSync('./src/premium.json', JSON.stringify(json))
-    m.reply(`✅Berhasil menambahkan ${await conn.getName(who, { withoutContact: true })} sebagai member premium selama ${long} Hari`)
-    conn.sendButton(who, `Hai @${who.split`@`[0]}
-    
-Selamat bergabung di _Member Premium_
-`.trim(), `Nikmati fitur" yang ada di premium
-
-${usedPrefix}join <link> => Untuk menambahkan bot ke dalam group melalui link
-${usedPrefix}jadibot => untuk manjadikan kamu sebagai bot
-
-Selengkapnya klik di Menu Premium`.trim(), 1, [`Menu Premium`, `${usedPrefix}menu premium`], 0, { contextInfo: { mentionedJid: [who] } })
-    global.db.data.users[who].premdate = new Date() * 1 + long_time
-    delete require.cache[require.resolve('../config')]
-    require('../config')
-}
-handler.help = ['addprem [@user]']
-handler.tags = ['owner']
-handler.command = /^(add|tambah|\+)prem$/i
-
-handler.rowner = true
-
-module.exports = handler
-*/
