@@ -1,21 +1,31 @@
-let handler = m => m
+let handler = (m) => m;
 
-let levelling = require('../lib/levelling')
+const levelling = require("../lib/levelling");
+
 handler.before = function (m) {
-        let user = global.db.data.users[m.sender]
-        if (!user.autolevelup) return !0
-        let before = user.level * 1
-        while (levelling.canLevelUp(user.level, user.exp, global.multiplier)) user.level++
-        if (before !== user.level) {
-                this.reply(m.chat, `
-Selamat, anda telah naik level!
-*${before}* -> *${user.level}*
-Reward: Claim lebih banyak XP Harian seiring naiknya level 
-Role kamu sekarang: *${user.role}*      
-Ketik *.role* untuk melihat role
-gunakan *.cek* untuk mengecek`.trim(), m)
+  let user = global.db.data.users[m.sender];
+  if (!user.autolevelup) return true;
 
-        }
-}
+  let before = user.level * 1;
+  while (levelling.canLevelUp(user.level, user.exp, global.multiplier)) {
+    user.level++;
+  }
 
-module.exports = handler
+  if (before !== user.level) {
+    this.reply(
+      m.chat,
+      `
+🎉 Congratulations! You have leveled up! 🎉
+*Level:* ${before} ➔ *${user.level}*
+*Reward:* You can now claim more daily XP as you level up!
+*Your Current Role:* *${user.role}*
+
+Type *.role* to view your available roles.
+Type *.cek* to check your profile.
+`.trim(),
+      m
+    );
+  }
+};
+
+module.exports = handler;
