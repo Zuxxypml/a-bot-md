@@ -1,52 +1,53 @@
-/*
-   Silahkan Di Pakek
-   Tapi Bantu Rapihin :v
-   Buatan: Miaweers
-*/
-
 let handler = async (m, { conn, participants }) => {
-  // Mengambil daftar pengguna premium dan memformatnya
-  let prem = global.prems
-    .map(v => v.replace(/[^0-9]/g, '') + '@s.whatsapp.net')
-    .filter(v => v !== conn.user.jid);
+  // Get and format premium users list
+  let premiumUsers = global.prems
+    .map((v) => v.replace(/[^0-9]/g, "") + "@s.whatsapp.net")
+    .filter((v) => v !== conn.user.jid);
 
-  let users = global.db.data.users;
-  
-  // Membuat pesan dengan daftar pengguna premium
-  let message = `「 List User Premium 」\n\nTotal: ${prem.length}\n\n` +
-    prem.map((v, i) => {
-      // Cek apakah pengguna ada di dalam daftar peserta
-      const isParticipant = participants.some(p => v === p.jid);
-      const user = users[v] || {};  // Jika users[v] undefined, buat objek kosong untuk menghindari error
-      const name = user.name || 'Unregistered';  // Nama default jika tidak ada nama
-      const premDate = user.premdate || 0;
+  // Handle empty list case
+  if (premiumUsers.length === 0) {
+    return conn.reply(m.chat, "There are currently no premium users.", m);
+  }
 
-      // Tanggal berakhirnya premium
-      const status = premDate < Date.now() ? 'Habis' : conn.msToDate(premDate - Date.now());
+  let message =
+    `*PREMIUM USERS LIST*\n\n` +
+    `Total: ${premiumUsers.length}\n\n` +
+    premiumUsers
+      .map((v, i) => {
+        const userData = global.db.data.users[v] || {};
+        const name = userData.name || "Unregistered User";
+        const isInChat = participants.some((p) => v === p.jid);
+        const phoneNumber = v.split("@")[0];
+        const expiryDate = userData.premdate || 0;
+        const status =
+          expiryDate < Date.now()
+            ? "Expired"
+            : `Active (Expires in: ${conn.msToDate(expiryDate - Date.now())})`;
 
-      // Format pesan untuk setiap pengguna
-      return `${i + 1}. ${isParticipant ? `(${name}) wa.me/${v.split('@')[0]}` : `${name}`}\n*Tersisa:* ${status}`;
-    }).join('\n\n');
-  
-  // Kirim pesan ke chat
-  conn.reply(m.chat, message, m, { contextInfo: { mentionedJid: prem } });
-}
+        return `${i + 1}. ${
+          isInChat ? `📱 [${name}](https://wa.me/${phoneNumber})` : `👤 ${name}`
+        }\n   • Status: ${status}`;
+      })
+      .join("\n\n");
 
-handler.help = ['premlist'];
-handler.tags = ['owner'];
-handler.command = /^(listprem(ium)?|prem(ium)?list)$/i;
+  await conn.reply(m.chat, message, m, {
+    contextInfo: {
+      mentionedJid: premiumUsers,
+      // Add externalAdReply for better presentation (optional)
+      externalAdReply: {
+        title: "Premium Users List",
+        body: `Total: ${premiumUsers.length}`,
+        thumbnail: await (
+          await fetch("https://i.imgur.com/8Km9tLL.png")
+        ).buffer(),
+      },
+    },
+  });
+};
+
+handler.help = ["premiumlist"];
+handler.tags = ["owner", "premium"];
+handler.command = /^(listprem(ium)?|prem(ium)?list|premiumusers)$/i;
+handler.owner = true;
 
 module.exports = handler;
-/*
-let handler = async (m, { conn, participants }) => {
-  let prem = global.prems.map(v => v.replace(/[^0-9]/g, '') + '@s.whatsapp.net').filter(v => v != conn.user.jid)
-  let users = global.db.data.users
-  conn.reply(m.chat, `「 List User Premium 」\n\nTotal: ${prem.length}\n\n` + prem.map((v, i) => i + 1 + `. ${participants.some(p => v === p.jid) ? `(${users[v].name}) wa.me/${v.split`@`[0]}` : `${users[v].name}`}` + `\n*Tersisa:* ${users[v] === undefined ? '' : users[v].premdate < new Date() * 1 ? 'Habis' : conn.msToDate(users[v].premdate - new Date() * 1)}`).join`\n\n`,
-    m, { contextInfo: { mentionedJid: prem } })
-}
-handler.help = ['premlist']
-handler.tags = ['owner']
-handler.command = /^(listprem(ium)?|prem(ium)?list)$/i
-
-module.exports = handler
-*/

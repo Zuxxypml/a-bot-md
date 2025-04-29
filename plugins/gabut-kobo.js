@@ -1,7 +1,7 @@
-const fs = require('fs');
-const { spawn } = require('child_process');
+const fs = require("fs");
+const { spawn } = require("child_process");
 
-// Kode Python sebagai string
+// Python code as a string
 const pythonCode = `
 from pydub import AudioSegment
 import time
@@ -11,54 +11,41 @@ import threading
 # Initialize colorama
 init(autoreset=True)
 
-# Delay untuk masing-masing lirik
+# Delays for each lyric
 delays = [
-    0.10,  # Delay untuk lirik pertama
-    0.1,   # Delay untuk lirik kedua
-    0.15,  # Delay untuk lirik ketiga
-    0.16,  # Delay untuk lirik keempat
-    0.15,  # Delay untuk lirik kelima
-    0.14,  # Delay untuk lirik keenam
-    0.12,  # Delay untuk lirik ketujuh
-    0.15,  # Delay untuk lirik kedelapan
-    0.15,  # Delay untuk lirik kesembilan
-    0.14,  # Delay untuk lirik kesepuluh
-    0.13,  # Delay untuk lirik kesebelas
-    0.14,  # Delay untuk lirik keduabelas
-    0.12,  # Delay untuk lirik ketigabelas
-    0.15,  # Delay untuk lirik keempatbelas
-    0.14,  # Delay untuk lirik kelimabelas
-    0.14,  # Delay untuk lirik keenambelas
-    0.14   # Delay untuk lirik ketujuhbelas
+    0.10, 0.10, 0.15, 0.16, 0.15,
+    0.14, 0.12, 0.15, 0.15, 0.14,
+    0.13, 0.14, 0.12, 0.15, 0.14,
+    0.14, 0.14
 ]
 
 # Load the audio file
 audio_file_path = 'koiire_kobo.mp3'
 song = AudioSegment.from_mp3(audio_file_path)
-song.export('output.wav', format='wav')  # Convert to WAV for compatibility
+song.export('output.wav', format='wav')
 
-# Lirik lagu dengan waktu tampil
+# Lyrics with timestamps
 lyrics = [
-    (0, "kata mama anak kecil belum boleh cinta-cintaan"),
-    (5, "tapi..."),
-    (6.7, "Tooi you de chikaku ni ita"),
-    (12.12, "Marude unmei no you ni"),
-    (17, "Itsudatte tonari ni ite"),
-    (21, "Watashi dake o mitsumetekureta ne"),
-    (27, "Suki yo"),
-    (28, "Ima anata ni omoi nosete"),
-    (32, "Hora"),
-    (33, "sunao ni naru no watashi"),
-    (36, "Kono saki motto soba ni ite mo ii ka na?"),
-    (42, "Koi to koi ga kasanatte"),
-    (46, "Suki yo"),
-    (47, "Ima anata ni omoi todoke"),
-    (51, "Nee, kizuitekuremasen ka?"),
-    (56, "Doushiyou mo nai kurai"),
-    (60, "Kokoro made suki ni natteiku")
+    (0, "Mom said kids shouldn't fall in love yet"),
+    (5, "But..."),
+    (6.7, "You were far yet so close"),
+    (12.12, "It felt like fate"),
+    (17, "Always next to me"),
+    (21, "You always looked only at me"),
+    (27, "I love you"),
+    (28, "Now I send my feelings to you"),
+    (32, "Look"),
+    (33, "I'm being honest now"),
+    (36, "Can I stay by your side forever?"),
+    (42, "Our love overlaps"),
+    (46, "I love you"),
+    (47, "Now my feelings reach you"),
+    (51, "Hey, can't you notice?"),
+    (56, "My heart helplessly falls deeper"),
+    (60, "Falling in love completely")
 ]
 
-# Warna untuk masing-masing lirik
+# Colors for each lyric
 colors = [Fore.RED, Fore.GREEN, Fore.YELLOW, Fore.BLUE, Fore.MAGENTA, Fore.CYAN, Fore.WHITE]
 
 # Function to display lyrics with typing effect
@@ -70,102 +57,90 @@ def display_lyrics(lyrics, delays):
         color = colors[i % len(colors)]
         for char in line:
             print(color + char, end='', flush=True)
-            time.sleep(delays[i])  # Adjust the speed of typing effect based on delay for each lyric
-        print()  # New line after each lyric
+            time.sleep(delays[i])
+        print()
 
-# Play the song and display lyrics
+# Run typing effect
 lyrics_thread = threading.Thread(target=display_lyrics, args=(lyrics, delays))
 lyrics_thread.start()
 `;
 
-// Menulis kode Python ke file sementara
-const pythonFilePath = 'temp_script.py';
+const pythonFilePath = "temp_script.py";
 fs.writeFileSync(pythonFilePath, pythonCode);
 
-// Fungsi untuk menjalankan skrip Python
+// Function to run Python script
 const runPythonScript = (scriptPath) => {
-    return new Promise((resolve, reject) => {
-        const pythonProcess = spawn('python', [scriptPath]);
+  return new Promise((resolve, reject) => {
+    const pythonProcess = spawn("python", [scriptPath]);
 
-        pythonProcess.stdout.on('data', (data) => {
-            console.log(`Output dari Python: ${data}`);
-        });
-
-        pythonProcess.stderr.on('data', (data) => {
-            console.error(`Error dari Python: ${data}`);
-        });
-
-        pythonProcess.on('close', (code) => {
-            if (code !== 0) {
-                reject(`Proses Python keluar dengan kode ${code}`);
-            } else {
-                resolve();
-            }
-        });
+    pythonProcess.stdout.on("data", (data) => {
+      console.log(`Python Output: ${data}`);
     });
+
+    pythonProcess.stderr.on("data", (data) => {
+      console.error(`Python Error: ${data}`);
+    });
+
+    pythonProcess.on("close", (code) => {
+      if (code !== 0) {
+        reject(`Python process exited with code ${code}`);
+      } else {
+        resolve();
+      }
+    });
+  });
 };
 
-// Fungsi delay menggunakan Promise
-const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+// Delay helper
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 let handler = async (m, { conn }) => {
-    let loadd = [
-        "Beli Ciki",
-        "Beli Koyo",
-        "Sukiyo!!..",
-        "Ima anata ni omoi nosete",
-        "Hora, sunao ni naru no Watashi!!..",
-        "Kono Saki Moto soba ni ite mo ii ka na?",
-        "Koi to koi ga kasanatte!!",
-        "Sukiyo!!.."
-    ];
+  const loadingStages = [
+    "Buying snacks...",
+    "Applying band-aid...",
+    "I love you!!..",
+    "Now sending my feelings to you...",
+    "Look, I'm finally honest!!..",
+    "Can I stay by your side forever?",
+    "Our love overlaps!!",
+    "I love you!!..",
+  ];
 
-    // Array untuk menyimpan delay masing-masing tahap loading dalam milidetik
-    let delays = [
-        0.12 * 1000,  // 120 ms
-        0.12 * 1000,  // 120 ms
-        0.12 * 1000,  // 120 ms
-        0.15 * 1000,  // 150 ms
-        0.15 * 1000,  // 150 ms
-        0.14 * 1000,  // 140 ms
-        0.13 * 1000,  // 130 ms
-        0.14 * 1000   // 140 ms
-    ];
+  const stageDelays = [120, 120, 120, 150, 150, 140, 130, 140]; // milliseconds
 
-    // Mengirim pesan loading awal
-    let { key } = await conn.sendMessage(m.chat, { text: 'ʟ ᴏ ᴀ ᴅ ɪ ɴ ɢ. . .' }); // Pengalih isu
+  let { key } = await conn.sendMessage(m.chat, { text: "ʟ ᴏ ᴀ ᴅ ɪ ɴ ɢ..." });
 
-    // Mengedit pesan dengan status loading
-    for (let i = 0; i < loadd.length; i++) {
-        await delay(delays[i % delays.length]);
-        await conn.sendMessage(m.chat, { text: loadd[i], edit: key });
-    }
+  for (let i = 0; i < loadingStages.length; i++) {
+    await delay(stageDelays[i]);
+    await conn.sendMessage(m.chat, { text: loadingStages[i], edit: key });
+  }
 
-    // Menjalankan skrip Python
-    await runPythonScript(pythonFilePath)
-        .then(() => {
-            console.log('Skrip Python selesai dijalankan.');
-            // Menghapus file sementara setelah eksekusi selesai
-            fs.unlinkSync(pythonFilePath);
-        })
-        .catch((error) => {
-            console.error('Error saat menjalankan skrip Python:', error);
-            // Menghapus file sementara jika terjadi error
-            fs.unlinkSync(pythonFilePath);
-        });
+  // Run the Python script
+  await runPythonScript(pythonFilePath)
+    .then(() => {
+      console.log("Python script finished successfully.");
+      fs.unlinkSync(pythonFilePath);
+    })
+    .catch((error) => {
+      console.error("Error running Python script:", error);
+      fs.unlinkSync(pythonFilePath);
+    });
 
-    // Mengirim file audio sebagai voice note
-    const audioFilePath = 'output.wav';
-    if (fs.existsSync(audioFilePath)) {
-        await conn.sendMessage(m.chat, { audio: { url: audioFilePath }, mimetype: 'audio/wav', ptt: true });
-        fs.unlinkSync(audioFilePath); // Hapus file audio setelah dikirim
-    } else {
-        console.error('File audio tidak ditemukan.');
-    }
+  const audioFilePath = "output.wav";
+  if (fs.existsSync(audioFilePath)) {
+    await conn.sendMessage(m.chat, {
+      audio: { url: audioFilePath },
+      mimetype: "audio/wav",
+      ptt: true,
+    });
+    fs.unlinkSync(audioFilePath); // Cleanup after sending
+  } else {
+    console.error("Audio file not found.");
+  }
 };
 
-handler.help = ['loading'];
-handler.tags = ['fun'];
+handler.help = ["loading"];
+handler.tags = ["fun"];
 handler.command = /^(loading)$/i;
 
 module.exports = handler;

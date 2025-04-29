@@ -1,24 +1,49 @@
 let handler = async (m, { conn, usedPrefix }) => {
-    let chats = Object.entries(global.db.data.chats).filter(chat => chat[1].isBanned)
-    let users = Object.entries(global.db.data.users).filter(user => user[1].banned)
+  let bannedChats = Object.entries(global.db.data.chats).filter(
+    (chat) => chat[1].isBanned
+  );
+  let bannedUsers = Object.entries(global.db.data.users).filter(
+    (user) => user[1].banned
+  );
 
-    m.reply(`
-╔ *Daftar Chat Terbanned*
-║ Total : ${chats.length} Chat${chats ? '\n' + chats.map(([jid], i) => `
-║ ${i + 1}. ${conn.getName(jid) == undefined ? 'Unknown' : conn.getName(jid)}
+  m.reply(
+    `
+╔ *Banned Chats List*
+║ Total: ${bannedChats.length} Chat${
+      bannedChats.length
+        ? "\n" +
+          bannedChats
+            .map(([jid], i) =>
+              `
+║ ${i + 1}. ${conn.getName(jid) || "Unknown"}
 ║ ${jid}
-`.trim()).join('\n') : ''}
+`.trim()
+            )
+            .join("\n")
+        : ""
+    }
 ╚════
 
-╔ *Daftar User Terbanned*
-║ Total : ${users.length} User${users ? '\n' + users.map(([jid], i) => `
-║ ${i + 1}. ${conn.getName(jid) == undefined ? 'Unknown' : conn.getName(jid)}
+╔ *Banned Users List*
+║ Total: ${bannedUsers.length} User${
+      bannedUsers.length
+        ? "\n" +
+          bannedUsers
+            .map(([jid], i) =>
+              `
+║ ${i + 1}. ${conn.getName(jid) || "Unknown"}
 ║ ${jid}
-`.trim()).join('\n') : ''}
+`.trim()
+            )
+            .join("\n")
+        : ""
+    }
 ╚════
-`.trim())
-}
-handler.help = ['listbanned']
-handler.tags = ['info']
-handler.command = /^listban(ned)?|ban(ned)?list|daftarban(ned)?$/i
-module.exports = handler
+`.trim()
+  );
+};
+
+handler.help = ["listbanned"];
+handler.tags = ["info"];
+handler.command = /^(listban(ned)?|ban(ned)?list|bannedlist)$/i;
+module.exports = handler;

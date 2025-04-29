@@ -1,21 +1,60 @@
-let { kbbi } = require('@bochilteam/scraper')
+const { kbbi } = require("@bochilteam/scraper");
 
-let handler = async (m, { text }) => {
-    if (!text) throw `_Masukkan keyword!_`
-    const res = await kbbi(text)
-    if (!res.ok) throw 'Server Error.. Harap lapor owner'
-    m.reply(`
-${res.map(v => `
-*📌${v.title}*
-${v.means.map(v => '- ' + v).join('\n`')}
-`).join('\n').trim()}
-Note:
-p = Partikel: kelas kata yang meliputi kata depan, kata sambung, kata seru, kata sandang, ucapan salam
-n = Nomina: kata benda
-`.trim())
-}
-handler.help = ['kbbi <teks>']
-handler.tags = ['belajar']
-handler.command = /^kbbi$/i
+const handler = async (m, { text, usedPrefix, command }) => {
+  // Help message if no keyword provided
+  if (!text) {
+    const exampleWords = ["makan", "pulang", "bahagia"];
+    const example =
+      exampleWords[Math.floor(Math.random() * exampleWords.length)];
+    return m.reply(
+      `📚 *KBBI Dictionary*\n\n` +
+        `Please provide a word to look up\n\n` +
+        `Example: *${usedPrefix}${command} ${example}*\n` +
+        `Try: *${usedPrefix}${command} ${text || "kata"}*`
+    );
+  }
 
-module.exports = handler
+  try {
+    // Fetch KBBI data
+    const res = await kbbi(text);
+
+    if (!res || !res.length) {
+      return m.reply(`No dictionary entries found for "${text}"`);
+    }
+
+    // Format the response
+    let message = `📚 *KBBI Results for "${text}"*\n\n`;
+
+    res.forEach((entry) => {
+      message += `🔍 *${entry.title}*\n`;
+      message += entry.means.map((meaning) => `• ${meaning}`).join("\n");
+      message += "\n\n";
+    });
+
+    // Add legend
+    message +=
+      `*Legend*:\n` +
+      `p = Particle (prepositions, conjunctions, interjections)\n` +
+      `n = Noun (kata benda)\n` +
+      `v = Verb (kata kerja)\n` +
+      `a = Adjective (kata sifat)`;
+
+    await m.reply(message);
+  } catch (error) {
+    console.error("KBBI Error:", error);
+    m.reply(
+      `❌ Failed to fetch dictionary data\n\n` +
+        `Possible reasons:\n` +
+        `- The word doesn't exist in KBBI\n` +
+        `- Server is temporarily unavailable\n` +
+        `- Connection issues`
+    );
+  }
+};
+
+handler.help = ["kbbi <word>"];
+handler.tags = ["education", "tools"];
+handler.command = /^kbbi$/i;
+handler.example = `${usedPrefix}kbbi belajar`;
+
+module.exports = handler;

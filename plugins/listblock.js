@@ -1,9 +1,32 @@
 let handler = async (m, { conn, isOwner }) => {
-    let blocked = conn.blocklist.map(v => v.replace(/[^0-9]/g, '') + '@s.whatsapp.net').filter(v => v != conn.user.jid)
-    conn.reply(m.chat, `╔ *Daftar Terblokir*` + `\n` + blocked.map(v => '║ @' + v.replace(/@.+/, '')).join`\n` + '\n╚════', m, { contextInfo: { mentionedJid: blocked } })
-}
-handler.help = ['listblock']
-handler.tags = ['info']
-handler.command = /^(bloc?klist|listbloc?k)$/i
+  if (!isOwner)
+    return m.reply("This command can only be used by the bot owner.");
 
-module.exports = handler
+  let blockedUsers = conn.blocklist
+    .map((v) => v.replace(/[^0-9]/g, "") + "@s.whatsapp.net")
+    .filter((v) => v !== conn.user.jid);
+
+  if (blockedUsers.length === 0) {
+    return m.reply("There are currently no blocked users.");
+  }
+
+  let listMessage =
+    `╔ *Blocked Users List*\n` +
+    blockedUsers
+      .map((v, i) => `║ ${i + 1}. @${v.replace(/@.+/, "")}`)
+      .join("\n") +
+    `\n╚ Total: ${blockedUsers.length} user(s) ════`;
+
+  conn.reply(m.chat, listMessage, m, {
+    contextInfo: {
+      mentionedJid: blockedUsers,
+    },
+  });
+};
+
+handler.help = ["blocklist"];
+handler.tags = ["owner"];
+handler.command = /^(blocklist|listblock|blist)$/i;
+handler.owner = true;
+
+module.exports = handler;

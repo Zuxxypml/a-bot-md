@@ -1,25 +1,45 @@
 let handler = async (m, { conn, usedPrefix }) => {
-    await conn.reply(m.chat, `
-Setiap fitur yang kamu gunakan, 
-ada beberapa fitur yang menggunakan *batasan/limit*
+  const message = `
+🌟 *XP & Limit Information* 🌟
 
-*Cara mendapatkan limit*
+Every feature in this bot uses *limits* to ensure fair usage for all users.
+
+📊 *How to Get More XP/Limit:*
 ${conn.readmore}
-Kumpulkan XP untuk ditukarkan menjadi limit, melalui salah satu cara yaitu:
-1. Klaim XP gratis harian => *Ketik ${usedPrefix}claim*
-2. Bermain game yang ada di bot => *Ketik ${usedPrefix}menu game *
+1. *Daily XP Claim* - Get free XP every day
+   → Type: ${usedPrefix}claim
 
-Setelah itu, *tukarkan XP* kamu menjadi limit dengan cara *ketik ${usedPrefix}buy*
+2. *Play Games* - Earn XP by playing fun games
+   → Type: ${usedPrefix}menu game
 
-Kamu bisa melihat jumlah limitmu dengan cara *klik Cek XP* di bawah
-`.trim(),
-        `Fitur yang memakai limit ditandai dengan *symbol ($) di samping menu*
-Selama Limit kamu cukup, Fitur akan bekerja. Dan sebaliknya, 
-Jika limitmu 0, Fitur tidak akan bekerja`.trim(), m)
-}
+3. *Active Chatting* - Earn XP by chatting with the bot
 
-handler.command = /^infoe?xp$/i
-handler.help = ['infoexp']
-handler.tags = ['info']
+4. *Group Activities* - Participate in group activities
 
-module.exports = handler
+💱 *How to Convert XP to Limit:*
+After collecting XP, you can convert it to limit:
+→ Type: ${usedPrefix}buy
+
+🔍 *Check Your Balance:*
+→ Type: ${usedPrefix}balance
+→ Or click "Check XP" below
+
+💡 *Important Notes:*
+- Features requiring limit are marked with *($) symbol*
+- When your limit reaches 0, premium features will stop working
+- Higher XP levels unlock special privileges
+`.trim();
+
+  const footer = `
+🔄 *Daily Reset:* Your XP/Limit status resets every 24 hours
+📈 *Bonus:* Active users get bonus XP on weekends
+`.trim();
+
+  await conn.reply(m.chat, message, footer, m);
+};
+
+handler.help = ["infoexp", "xpinfo", "limitinfo"];
+handler.tags = ["info", "xp"];
+handler.command = /^(infoe?xp|xpinfo|limitinfo)$/i;
+
+module.exports = handler;

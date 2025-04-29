@@ -1,76 +1,138 @@
-/**
-  * Plugins CJS HDVID by DitzDev
-  * Jangan apus WM Woi😂
-  * Usahakan baca dulu sampe bawah, Jangan asal copas aja
-  * source: https://whatsapp.com/channel/0029VaxCdVuFsn0eDKeiIm2c
-  */
-const fs = require('fs');
-const { exec } = require('child_process');
-const fetch = require('node-fetch');
-const { remini } = require('../lib/hdvid.js');
+const fs = require("fs");
+const { exec } = require("child_process");
+const path = require("path");
+const { remini } = require("../lib/hdvid.js");
 
-let handler = async (m, { conn, text, usedPrefix, command }) => {
-	const fatkuns = (m.quoted || m)
-        const quoted = (fatkuns.mtype == 'buttonsMessage') ? fatkuns[Object.keys(fatkuns)[1]] : (fatkuns.mtype == 'templateMessage') ? fatkuns.hydratedTemplate[Object.keys(fatkuns.hydratedTemplate)[1]] : (fatkuns.mtype == 'product') ? fatkuns[Object.keys(fatkuns)[0]] : m.quoted ? m.quoted : m
-        const mime = (quoted.msg || quoted).mimetype || ''
-        const qmsg = (quoted.msg || quoted)
-        let fps = parseInt(text)
-    if (!/video/.test(mime)) throw `Send/Reply videos with the caption *${usedPrefix}${command}* 60`;
-    if ((m.quoted ? m.quoted.seconds : m.msg.seconds) > 30) throw `Maksimal video 30 detik!`
-    if(!fps) throw `Masukkan fps, contoh: *${usedPrefix}${command}* 60`
-    if(fps > 30) throw `Maksimal fps adalah 30 fps!`
-    await conn.sendMessage(m.chat, { text: 'Wait... Executing the [ffmpeg] and [remini] libraries, This process may take 5-15 minutes' }, { quoted: m })
+const handler = async (m, { conn, text, usedPrefix, command }) => {
+  // Validate input
+  if (!text) {
+    const example = `${usedPrefix}${command} 30`;
+    return m.reply(`Please specify FPS value!\nExample: *${example}*`);
+  }
 
-    const chdir = "tmp";
+  const fps = parseInt(text);
+  if (isNaN(fps)) return m.reply("FPS must be a number!");
+  if (fps > 30) return m.reply("Maximum FPS is 30!");
+
+  // Check for quoted video
+  const quoted = m.quoted || m;
+  const mime = (quoted.msg || quoted).mimetype || "";
+  if (!/video/.test(mime)) return m.reply("Please reply to a video!");
+  if ((quoted.msg || quoted).seconds > 30) {
+    return m.reply("Maximum video duration is 30 seconds!");
+  }
+
+  try {
+    // Send processing message
+    const processingMsg = await m.reply(
+      "🔄 Processing video... This may take 5-15 minutes"
+    );
+
+    // Create directories
     const timestamp = Date.now();
-    const pndir = `${chdir}/${m.sender}`;
-    const rsdir = `${chdir}/result-${m.sender}`;
-    const fdir = `${pndir}/frames/${timestamp}`;
-    const rfdir = `${rsdir}/frames/${timestamp}`;
-    const rname = `${rsdir}/${m.sender}-${timestamp}.mp4`;
+    const baseDir = "tmp";
+    const workDir = path.join(baseDir, m.sender);
+    const resultDir = path.join(baseDir, `result-${m.sender}`);
+    const framesDir = path.join(workDir, "frames", timestamp.toString());
+    const enhancedFramesDir = path.join(
+      resultDir,
+      "frames",
+      timestamp.toString()
+    );
+    const outputPath = path.join(resultDir, `${m.sender}-${timestamp}.mp4`);
 
-    const dirs = [chdir, pndir, rsdir, `${pndir}/frames`, fdir, `${rsdir}/frames`, rfdir];
-    dirs.forEach(dir => {
-        if (!fs.existsSync(dir)) fs.mkdirSync(dir);
+    [
+      baseDir,
+      workDir,
+      resultDir,
+      path.dirname(framesDir),
+      framesDir,
+      path.dirname(enhancedFramesDir),
+      enhancedFramesDir,
+    ].forEach((dir) => {
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     });
 
-    const media = await conn.downloadAndSaveMediaMessage(qmsg, `${pndir}/${timestamp}`);
+    // Download video
+    const videoPath = path.join(workDir, `${timestamp}.mp4`);
+    const media = await conn.downloadAndSaveMediaMessage(quoted, videoPath);
 
+    // Extract frames
     await new Promise((resolve, reject) => {
-        exec(`ffmpeg -i ${media} -vf "fps=${fps}" ${fdir}/frame-%04d.png`, (err) => {
-            if (err) reject(err);
-            else resolve();
+      exec(
+        `ffmpeg -i ${media} -vf "fps=${fps}" ${framesDir}/frame-%04d.png`,
+        (err, stdout, stderr) => {
+          if (err) {
+            console.error("Frame Extraction Error:", stderr);
+            reject(new Error("Failed to extract frames"));
+          } else resolve();
+        }
+      );
+    });
+
+    // Enhance frames
+    const frames = fs.readdirSync(framesDir);
+    const enhancementPromises = frames.map((frame) => {
+      const framePath = path.join(framesDir, frame);
+      return remini(fs.readFileSync(framePath), "enhance")
+        .then((enhanced) => {
+          fs.writeFileSync(path.join(enhancedFramesDir, frame), enhanced);
+        })
+        .catch((err) => {
+          console.error("Frame Enhancement Error:", err);
+          throw new Error("Failed to enhance frames");
         });
     });
 
-    const images = fs.readdirSync(fdir);
-    let result = {};
+    await Promise.all(enhancementPromises);
 
-    for (let i = 0; i < images.length; i++) {
-        const image = images[i];
-        result[image] = remini(fs.readFileSync(`${fdir}/${image}`), "enhance");
-    }
-
-    const values = await Promise.all(Object.values(result));
-    Object.keys(result).forEach((key, index) => {
-        result[key] = values[index];
-    });
-    
-    for(let i of Object.keys(result)) {
-    	fs.writeFileSync(`${rfdir}/${i}`, result[i]) 
-    }
-
+    // Compile enhanced video
     await new Promise((resolve, reject) => {
-        exec(`ffmpeg -framerate ${fps} -i ${rfdir}/frame-%04d.png -i ${media} -c:v libx264 -pix_fmt yuv420p -c:a aac -strict experimental -shortest ${rname}`, (err) => {
-            if (err) reject(err);
-            else resolve();
-        });
+      exec(
+        `ffmpeg -framerate ${fps} -i ${enhancedFramesDir}/frame-%04d.png ` +
+          `-i ${media} -c:v libx264 -pix_fmt yuv420p -c:a aac ` +
+          `-strict experimental -shortest ${outputPath}`,
+        (err, stdout, stderr) => {
+          if (err) {
+            console.error("Video Compilation Error:", stderr);
+            reject(new Error("Failed to compile video"));
+          } else resolve();
+        }
+      );
     });
-    conn.sendMessage(m.chat, { video: fs.readFileSync(rname) }, { quoted: m })
+
+    // Send result
+    await conn.sendMessage(
+      m.chat,
+      {
+        video: fs.readFileSync(outputPath),
+        caption:
+          "✅ Video enhancement complete!\n" +
+          `⚙️ FPS: ${fps}\n` +
+          `🕒 Processing time: ${((Date.now() - timestamp) / 1000).toFixed(
+            1
+          )}s`,
+      },
+      { quoted: m }
+    );
+
+    // Clean up
+    fs.rmSync(workDir, { recursive: true, force: true });
+    fs.rmSync(resultDir, { recursive: true, force: true });
+
+    // Delete processing message
+    await conn.sendMessage(m.chat, { delete: processingMsg.key });
+  } catch (error) {
+    console.error("HD Video Error:", error);
+    m.reply(
+      `⚠️ Error: ${error.message}\nPlease try again with a shorter video.`
+    );
+  }
 };
 
-handler.help = ['hdvid'];
-handler.command = ['hdvid'];
-handler.tags = ['tools'];
+handler.help = ["hdvid <fps> - Enhance video quality (max 30fps)"];
+handler.tags = ["tools", "media"];
+handler.command = /^(hdvid|enhance)$/i;
+handler.limit = true;
 
 module.exports = handler;

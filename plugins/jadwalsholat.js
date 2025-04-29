@@ -1,81 +1,88 @@
-/*
- • Fitur By Anomaki Team
- • Created : Nazand Code
- • Contributor by : selxyz (scrape) 
- • Jadwal Sholat 
- • Jangan Hapus Wm
- • https://whatsapp.com/channel/0029Vaio4dYC1FuGr5kxfy2l
-*/
+const axios = require("axios");
+const cheerio = require("cheerio");
 
-const axios = require('axios');
-const cheerio = require('cheerio');
+const handler = async (m, { conn, args, usedPrefix, command }) => {
+  // Default to Lagos if no city specified
+  const city = args[0]?.toLowerCase() || "lagos";
 
-const handler = async (m, { conn, usedPrefix, command, args }) => {
-    const kota = (args[0]?.toLowerCase() || 'jakarta');
-    try {
-        const { data } = await axios.get(`https://jadwal-sholat.tirto.id/kota-${kota}`);
-        const $ = cheerio.load(data);
+  try {
+    await m.reply("⏳ Fetching prayer times for Nigeria...");
 
-        const jadwal = $('tr.currDate td').map((i, el) => $(el).text()).get();
+    // Nigerian cities mapping
+    const nigerianCities = {
+      lagos: "Lagos",
+      abuja: "Abuja",
+      kano: "Kano",
+      ibadan: "Ibadan",
+      "port-harcourt": "Port Harcourt",
+      kano: "Kano",
+      kaduna: "Kaduna",
+    };
 
-        if (jadwal.length === 7) {
-            const [tanggal, subuh, duha, dzuhur, ashar, maghrib, isya] = jadwal;
+    const cityName =
+      nigerianCities[city] || city.charAt(0).toUpperCase() + city.slice(1);
 
-            const zan = `
-╭──[ *Jadwal Sholat* ]──✧
-᎒⊸ *Kota*: ${kota.charAt(0).toUpperCase() + kota.slice(1)}
-᎒⊸ *Tanggal*: ${tanggal}
+    // Fetch data from Islamic prayer time API for Nigeria
+    const { data } = await axios.get(
+      `https://api.aladhan.com/v1/timingsByCity?city=${cityName}&country=Nigeria&method=2`,
+      {
+        timeout: 10000,
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        },
+      }
+    );
 
-╭──[ *Waktu Sholat* ]──✧
-᎒⊸ Subuh: ${subuh}
-᎒⊸ Duha: ${duha}
-᎒⊸ Dzuhur: ${dzuhur}
-᎒⊸ Ashar: ${ashar}
-᎒⊸ Maghrib: ${maghrib}
-᎒⊸ Isya: ${isya}
-╰────────────•`;
+    const timings = data.data.timings;
+    const dateInfo = data.data.date.readable;
+    const hijriDate = data.data.date.hijri.date;
 
-            await conn.reply(m.chat, zan, m);
-        } else {
-            await conn.reply(m.chat, 'Jadwal sholat tidak ditemukan. Pastikan nama kota sesuai.', m);
-        }
-    } catch (error) {
-        await conn.reply(m.chat, 'error', m);
+    // Format message in Nigerian English style
+    const message = `
+🕌 *Prayer Times in ${cityName.toUpperCase()}* 🕌
+📅 ${dateInfo} | ${hijriDate}
+
+🕒 *Prayer Schedule:*
+• Fajr: ${timings.Fajr}
+• Sunrise: ${timings.Sunrise}
+• Dhuhr: ${timings.Dhuhr}
+• Asr: ${timings.Asr}
+• Maghrib: ${timings.Maghrib}
+• Isha: ${timings.Isha}
+
+ℹ️ Usage: ${usedPrefix}prayertime <city>
+Example: ${usedPrefix}prayertime abuja
+`.trim();
+
+    await conn.reply(m.chat, message, m, {
+      contextInfo: {
+        externalAdReply: {
+          title: `Islamic Prayer Times for ${cityName.toUpperCase()}`,
+          body: "Powered by AlAdhan API",
+          thumbnailUrl: "https://i.ibb.co/4sYZ8Gc/islamic.png",
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Error:", error);
+    let errorMessage = "Failed to get prayer times. ";
+
+    if (error.response?.status === 404) {
+      errorMessage += `City '${city}' not found in Nigeria.`;
+    } else if (error.code === "ECONNABORTED") {
+      errorMessage += "Request timeout, please try again.";
+    } else {
+      errorMessage += "Please check the city name or try again later.";
     }
+
+    await conn.reply(m.chat, errorMessage, m);
+  }
 };
 
-handler.help = ['jadwalsholat <kota>']
-handler.tags = ['tools']
-handler.command = /^((jadwal)?sh?[oa]lat)$/i
+handler.help = ["prayertime <city>"];
+handler.tags = ["islamic", "tools"];
+handler.command = /^(prayertime|prayertimes|salat)$/i;
+handler.example = `${usedPrefix}prayertime lagos`;
 
-module.exports = handler
-
-/*
-let { jadwalsholat } = require('@bochilteam/scraper')
-let handler = async (m, { conn, text, usedPrefix }) => {
-  let d = new Date
-  let locale = 'id'
-  let gmt = new Date(0).getTime() - new Date('1 January 1970').getTime()
-  let week = d.toLocaleDateString(locale, { weekday: 'long' })
-  let date = d.toLocaleDateString(locale, {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric'
-  })
-  if (!text) throw `ketik ${usedPrefix}jadwalsholat daerah/kota\n*Contoh*: ${usedPrefix}jadwalsholat surabaya`
-
-  const res = await jadwalsholat(text)
-  if (!res.today) throw 'Server Error.. Harap lapor owner'
-  m.reply(`
-Jadwal Sholat *${text}*
-${week}, ${date}
-
-${Object.entries(res.today).map(([name, data]) => `*${name}:* ${data}`).join('\n').trim()}
-`.trim())
-}
-handler.help = ['jadwalsholat <kota>']
-handler.tags = ['tools']
-handler.command = /^((jadwal)?sh?[oa]lat)$/i
-
-module.exports = handler
-*/
+module.exports = handler;

@@ -1,261 +1,108 @@
-/*
-const { generate } = require('@genkit-ai/ai');
-const { gpt4o } = require('genkitx-openai');
-//const { z } = require('zod');
+const axios = require("axios");
+const { delay } = require("@adiwajshing/baileys");
 
-let handler = async (m, {
-  conn,
-  text,
-  usedPrefix,
-  command,
-}) => {
+const handler = async (m, { conn, text, args, usedPrefix, command }) => {
+  // Validate input
   if (!text) {
-    return m.reply(
-      `Masukkan Prompt!\n\nContoh: *${usedPrefix + command} apakah kamu gpt4?*`
+    const example = `${usedPrefix}${command} explain quantum computing`;
+    return m.reply(`Please enter your question!\nExample: *${example}*`);
+  }
+
+  const isSearchMode = args[0]?.toLowerCase() === "search";
+  const query = isSearchMode ? args.slice(1).join(" ") : text;
+
+  if (isSearchMode && !args[1]) {
+    return m.reply('Please enter your search query after "search"');
+  }
+
+  try {
+    // Show loading message
+    const loadingMsg = await m.reply(
+      isSearchMode
+        ? "🔍 Searching the web..."
+        : "🤖 Processing your question..."
     );
-  }
-try {
-    const response = await generate({
-      model: gpt4o,
-      prompt: text,
-    });
-    conn.reply(m.chat, await response.text(), m);
-} catch (e) {
-conn.reply(m.chat, " ERROR: {e}", m);
-  }
-};
 
-handler.command = /^(gpt4|ai)$/i
-handler.help = ["ai"];
-handler.tags = ["ai"];
-handler.limit = true;
-
-module.exports = handler;
-
-const axios = require('axios');
-const moment = require("moment-timezone");
-
-// Inisialisasi waktu dan tanggal
-const time = moment.tz('Asia/Jakarta').format('HH:mm:ss');
-const date = moment.tz('Asia/Jakarta').format('DD/MM/YYYY');
-
-// Handler utama
-let handler = async (m, { conn, text, usedPrefix, command }) => {
-    if (!text) {
-        return conn.reply(
-            m.chat,
-            `Masukkan prompt!\n\nContoh: *${usedPrefix + command} apakah kamu gpt4?*`,
-            m
-        );
-    }
-
-    try {
-        let res = await axios.post(
-            'https://api.blackbox.ai/api/chat',
-            {
-                messages: [{ role: 'user', content: text }],
-                userSelectedModel: 'deepseek-v3',
-                validated: '10f37b34-a166-4efb-bce5-1312d87f2f94'
-            },
-            {
-                headers: { 'Content-Type': 'application/json' }
-            }
-        );
-
-        conn.reply(m.chat, res.data, m);
-    } catch (error) {
-        console.error(error);
-        conn.reply(m.chat, `Terjadi kesalahan: ${error.response?.data?.message || error.message}`, m);
-    }
-};
-
-// Metadata handler
-handler.command = /^(gpt4|ai)$/i; // Regex untuk memanggil handler
-handler.help = ["ai"];
-handler.tags = ["ai"];
-handler.limit = true;
-
-module.exports = handler;
-*/
-/*
-Jangan Hapus Wm Bang 
-
-*Blackblox Ai Plugins CJS*
-
-Bisa Search Web Udh Itu aja Command : .BB dan .bb search 
-
-*[Sumber]*
-https://whatsapp.com/channel/0029Vb3u2awADTOCXVsvia28
-
-*[Sumber Scrape]*
-
-ZErvida 
-*/
-
-const axios = require('axios');
-
-async function fetchBlackboxAI(prompt, callback) {
-    const url = 'https://www.blackbox.ai/api/chat';
+    // API configuration
+    const apiUrl = "https://www.blackbox.ai/api/chat";
     const headers = {
-        'authority': 'www.blackbox.ai',
-        'accept': '*/*',
-        'accept-language': 'id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7',
-        'content-type': 'application/json',
-        'origin': 'https://www.blackbox.ai',
-        'user-agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Mobile Safari/537.36'
+      "Content-Type": "application/json",
+      "User-Agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36",
+      Origin: "https://www.blackbox.ai",
+      Referer: "https://www.blackbox.ai/",
     };
 
-    const data = {
-        "messages": [{ "role": "user", "content": prompt, "id": "54lcaEJ" }],
-        "agentMode": {},
-        "id": "RDyqb0u",
-        "previewToken": null,
-        "userId": null,
-        "codeModelMode": true,
-        "trendingAgentMode": {},
-        "isMicMode": false,
-        "userSystemPrompt": null,
-        "maxTokens": 1024,
-        "playgroundTopP": null,
-        "playgroundTemperature": null,
-        "isChromeExt": false,
-        "githubToken": "",
-        "clickedAnswer2": false,
-        "clickedAnswer3": false,
-        "clickedForceWebSearch": false,
-        "visitFromDelta": false,
-        "isMemoryEnabled": false,
-        "mobileClient": false,
-        "userSelectedModel": null,
-        "validated": "00f37b34-a166-4efb-bce5-1312d87f2f94",
-        "imageGenerationMode": false,
-        "webSearchModePrompt": true,
-        "deepSearchMode": false,
-        "domains": null,
-        "vscodeClient": false,
-        "codeInterpreterMode": false,
-        "customProfile": {
-            "name": "",
-            "occupation": "",
-            "traits": [],
-            "additionalInfo": "",
-            "enableNewChats": false
+    const requestData = {
+      messages: [{ role: "user", content: query }],
+      webSearchModePrompt: isSearchMode,
+      userSelectedModel: "gpt-4",
+      validated: "00f37b34-a166-4efb-bce5-1312d87f2f94",
+      maxTokens: 1024,
+    };
+
+    // Make API request
+    const response = await axios.post(apiUrl, requestData, { headers });
+    let result = response.data;
+
+    // Process response
+    if (typeof result === "object") {
+      result = JSON.stringify(result, null, 2);
+    }
+
+    // Truncate very long responses
+    const MAX_LENGTH = 15000;
+    if (result.length > MAX_LENGTH) {
+      await m.reply(
+        `⚠️ Response is too long (${result.length} characters), showing first part:`
+      );
+      result = result.substring(0, MAX_LENGTH) + "\n... [TRUNCATED]";
+    }
+
+    // Send response
+    await conn.sendMessage(
+      m.chat,
+      {
+        text: result,
+        contextInfo: {
+          externalAdReply: {
+            title: isSearchMode ? "Web Search Results" : "AI Response",
+            body: query.length > 30 ? query.substring(0, 30) + "..." : query,
+            thumbnailUrl: "https://www.blackbox.ai/favicon.ico",
+            sourceUrl: "https://www.blackbox.ai/",
+          },
         },
-        "session": null,
-        "isPremium": false,
-        "subscriptionCache": null,
-        "beastMode": false
-    };
+      },
+      { quoted: m }
+    );
 
-    try {
-        const response = await axios({
-            method: 'post',
-            url: url,
-            headers: headers,
-            data: data,
-            responseType: 'stream'
-        });
+    // Delete loading message
+    await conn.sendMessage(m.chat, { delete: loadingMsg.key });
+  } catch (error) {
+    console.error("AI Handler Error:", error);
 
-        let output = '';
-        let search = [];
-
-        response.data.on('data', chunk => {
-            const chunkStr = chunk.toString();
-            output += chunkStr;
-
-            const match = output.match(/\$~~~\$(.*?)\$~~~\$/);
-            if (match) {
-                search = JSON.parse(match[1]);
-                const text = output.replace(match[0], '');
-                output = '';
-                callback({ search });
-            } else {
-                if (search.length) callback({ text: chunkStr });
-            }
-        });
-
-        return new Promise((resolve) => {
-            response.data.on('end', () => {
-                resolve({ search, text: output.trim() });
-            });
-        });
-    } catch (error) {
-        console.error('Error:', error);
-        throw error;
+    let errorMessage = "⚠️ An error occurred";
+    if (error.response) {
+      if (error.response.status === 429) {
+        errorMessage += ": Too many requests. Please try again later.";
+      } else {
+        errorMessage += `: ${error.response.status} - ${error.response.statusText}`;
+      }
+    } else {
+      errorMessage += `: ${error.message}`;
     }
-}
 
-async function handler(m, { text, conn, args }) {
-    if (!text) return m.reply('Masukkan prompt untuk BlackboxAI!');
+    m.reply(errorMessage);
+  }
+};
 
-    const isSearchMode = args[0]?.toLowerCase() === 'search';
-    const prompt = isSearchMode ? args.slice(1).join(' ') : text;
-
-    if (isSearchMode && !args[1]) return m.reply('Masukkan kata kunci pencarian!');
-
-    try {
-        const mess = await conn.sendMessage(m.chat, { 
-            text: isSearchMode ? 'Mencari...' : '*Thinking*"...' 
-        }, { quoted: m });
-
-        let fullText = '';
-        let searchResults = [];
-
-        const result = await fetchBlackboxAI(prompt, (response) => {
-            if (!isSearchMode && response.text) {
-                fullText += response.text;
-                conn.sendMessage(m.chat, { 
-                    text: fullText, 
-                    edit: mess.key 
-                });
-            }
-
-            if (response.search) {
-                searchResults = response.search;
-                if (isSearchMode) {
-                    const searchText = searchResults.map((item, index) => {
-                        const title = item.title || item.text || 'No title';
-                        const url = item.url || item.link || '';
-                        return `${index + 1}. ${title}\n${url ? `${url}\n` : ''}`;
-                    }).join('\n');
-
-                    conn.sendMessage(m.chat, { 
-                        text: searchText || 'Tidak ada hasil pencarian.', 
-                        edit: mess.key 
-                    });
-                }
-            }
-        });
-
-        if (!isSearchMode && result.text) {
-            await conn.sendMessage(m.chat, {
-                text: result.text,
-                edit: mess.key
-            });
-
-            if (result.search && result.search.length > 0) {
-                const searchText = result.search.map((item, index) => {
-                    const title = item.title || item.text || 'No title';
-                    const url = item.url || item.link || '';
-                    return `${index + 1}. ${title}\n${url ? `${url}\n` : ''}`;
-                }).join('\n');
-
-                await conn.sendMessage(m.chat, {
-                    text: searchText,
-                    quoted: m
-                });
-            }
-        }
-
-    } catch (error) {
-        console.error('Error in BlackboxAI:', error);
-        m.reply('Terjadi kesalahan saat memproses permintaan.');
-    }
-}
-
-handler.help = ['blackbox', 'blackbox search','ai'];
-handler.tags = ['ai'];
-handler.command = /^(blackbox|ai|bb)$/i;
-handler.limit = false;
+// Command configuration
+handler.help = [
+  "ai <question> - Get AI response",
+  "ai search <query> - Search the web",
+];
+handler.tags = ["ai", "tools"];
+handler.command = /^(ai|bb|blackbox)$/i;
+handler.limit = true;
 
 module.exports = handler;

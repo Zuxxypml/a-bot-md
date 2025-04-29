@@ -1,43 +1,86 @@
-// update By Xnuvers007
-
-const fetch = require('node-fetch')
+// Manga Information Search Handler
+const fetch = require("node-fetch");
 
 var handler = async (m, { conn, text }) => {
-    if (!text) throw `*Masukan Judul Manga Yang Ingin Kamu Cari !*`
-    conn.reply(m.chat, 'Sedang mencari manga... Silahkan tunggu', m)
-    let res = await fetch('https://api.jikan.moe/v4/manga?q=' + text)
-    if (!res.ok) throw 'Tidak Ditemukan'
-    let json = await res.json()
-    let { chapters, url, type, score, scored, scored_by, rank, popularity, members, background, status, volumes, synopsis, favorites } = json.data[0]
-    // let author = json.data[0].authors[0].name
-    // let authormynimelist = json.data[0].authors[0].url
-    let judul = json.data[0].titles.map(jud => `${jud.title} [${jud.type}]`).join('\n');
-    let xnuvers007 = json.data[0].authors.map(Xnuvers007 => `${Xnuvers007.name} (${Xnuvers007.url})`).join('\n');
-    let genrenya = json.data[0].genres.map(xnvrs007 => `${xnvrs007.name}`).join('\n');
+  if (!text) throw `*Please enter the manga title you want to search!*`;
 
-    let animeingfo = `📚 ᴛɪᴛʟᴇ: ${judul}
-      📑 ᴄʜᴀᴘᴛᴇʀ: ${chapters}
-      ✉️ ᴛʀᴀɴsᴍɪsɪ: ${type}
-      🗂 sᴛᴀᴛᴜs: ${status}
-      😎 Genre: ${genrenya}
-      🗃 ᴠᴏʟᴜᴍᴇs: ${volumes}
-      🌟 ғᴀᴠᴏʀɪᴛᴇ: ${favorites}
-      🧮 sᴄᴏʀᴇ: ${score}
-      🧮 SCORED: ${scored}
-      🧮 SCORED BY: ${scored_by}
-      🌟 Rank: ${rank}
-      🤩 Popularitas: ${popularity}
-      👥 ᴍᴇᴍʙᴇʀs: ${members}
-      ⛓️ ᴜʀʟ: ${url}
-      👨‍🔬 ᴀᴜᴛʜᴏʀs: ${xnuvers007}
-      📝 ʙᴀᴄᴋɢʀᴏᴜɴᴅ: ${background}
-      💬 sɪɴᴏᴘsɪs: ${synopsis}
-      `
-    conn.sendFile(m.chat, json.data[0].images.jpg.image_url, 'manga.jpg', `*MANGA INFO*\n` + animeingfo, m)
-    /*conn.reply(m.chat, 'JANGAN LUPA SUPPORT DEVELOPERNYA\nXnuvers007\nhttps://saweria.co/xnuvers007', m)*/
-}
-handler.help = ['mangainfo <manga>', 'manga <namaManga>', 'infomanga <NamaManga/Anime>']
-handler.tags = ['anime']
-handler.command = /^(mangainfo|manga|infomanga)$/i
+  await conn.reply(m.chat, "Searching for manga... Please wait", m);
 
-module.exports = handler
+  try {
+    let res = await fetch(
+      "https://api.jikan.moe/v4/manga?q=" + encodeURIComponent(text)
+    );
+    if (!res.ok) throw "Manga not found";
+
+    let json = await res.json();
+    if (!json.data || json.data.length === 0) throw "No results found";
+
+    let manga = json.data[0];
+    let {
+      chapters,
+      url,
+      type,
+      score,
+      scored,
+      scored_by,
+      rank,
+      popularity,
+      members,
+      background,
+      status,
+      volumes,
+      synopsis,
+      favorites,
+    } = manga;
+
+    // Process multiple titles, authors, and genres
+    let titles = manga.titles.map((t) => `${t.title} [${t.type}]`).join("\n");
+    let authors = manga.authors.map((a) => `${a.name}`).join(", ");
+    let genres = manga.genres.map((g) => `${g.name}`).join(", ");
+
+    // Format the manga information
+    let mangaInfo = `
+📚 *Title(s):* 
+${titles}
+
+📑 *Chapters:* ${chapters || "Unknown"}
+📖 *Volumes:* ${volumes || "Unknown"}
+📝 *Type:* ${type}
+📊 *Status:* ${status}
+
+⭐ *Score:* ${score} (by ${scored_by} users)
+🏆 *Rank:* ${rank}
+📈 *Popularity:* #${popularity}
+❤️ *Favorites:* ${favorites}
+👥 *Members:* ${members}
+
+✍️ *Author(s):* ${authors}
+🗂️ *Genres:* ${genres}
+
+🔗 *More Info:* ${url}
+
+📖 *Synopsis:*
+${synopsis || "No synopsis available"}
+
+${background ? `\n📝 *Background:*\n${background}` : ""}
+        `.trim();
+
+    // Send manga cover image with info
+    await conn.sendFile(
+      m.chat,
+      manga.images.jpg.image_url,
+      "manga.jpg",
+      `*MANGA INFORMATION*\n${mangaInfo}`,
+      m
+    );
+  } catch (error) {
+    console.error("Manga search error:", error);
+    await conn.reply(m.chat, `Error: ${error.message || error}`, m);
+  }
+};
+
+handler.help = ["mangainfo <title>", "manga <title>", "infomanga <title>"];
+handler.tags = ["anime", "manga"];
+handler.command = /^(mangainfo|manga|infomanga)$/i;
+
+module.exports = handler;

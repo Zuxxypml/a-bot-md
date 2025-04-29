@@ -1,31 +1,72 @@
-let handler = async (m, { conn, args, command }) => {
-    let chat = conn.chats.all().filter(v => v.jid.endsWith('g.us') && !v.read_only)
-    if (command.endsWith('all') || command.endsWith('semua')) {
-        for (let i = 0; i < chat.length; i++) { // For loops
-            await m.reply('Byee👋, Bot akan keluar dari group', chat[i].jid)
-            await conn.groupLeave(chat[i].jid)
-            await delay(i * 2000) // Delaynya
-        }
-        await m.reply('Succes!!')
+const handler = async (m, { conn, args, command, isOwner }) => {
+  if (!isOwner)
+    return m.reply("❌ This command is only available for the bot owner");
+
+  const delay = (time) => new Promise((res) => setTimeout(res, time));
+  const groups = conn.chats
+    .all()
+    .filter((v) => v.jid.endsWith("g.us") && !v.read_only);
+
+  const leaveMessages = [
+    "Goodbye everyone! 👋",
+    "Bot signing off! 🚀",
+    "It's been great! 😊",
+    "Time for me to go! 🏃‍♂️",
+    "Bot out! ✌️",
+    "See you all later! 👀",
+    "My work here is done! ✅",
+  ];
+
+  const getRandomMessage = () =>
+    leaveMessages[Math.floor(Math.random() * leaveMessages.length)];
+
+  try {
+    if (command.endsWith("all") || command.endsWith("semua")) {
+      await m.reply(
+        `🚀 Initiating mass group exit from ${groups.length} groups...`
+      );
+
+      for (let i = 0; i < groups.length; i++) {
+        const group = groups[i];
+        const message = `${getRandomMessage()}\n\n- Your Bot`;
+
+        await conn.sendMessage(group.jid, { text: message });
+        await conn.groupLeave(group.jid);
+
+        if (i < groups.length - 1) await delay(2000); // 2 second delay between leaves
+      }
+
+      await m.reply(`✅ Successfully left ${groups.length} groups`);
     } else if (args[0]) {
-        let ada = chat.find(bot => bot.jid == args[0]) // Apakah botnya ada disitu
-        if (!ada) throw 'Bot tidak berada dalam group itu!!'
-        await m.reply('Masa aktif Bot di Group ini telah habis\nByee👋, Bot akan keluar', args[0])
-        await conn.groupLeave(args[0])
-        await m.reply('Succes!!')
+      const targetGroup = groups.find((g) => g.jid === args[0]);
+      if (!targetGroup) throw "❌ Bot is not in that group";
+
+      await conn.sendMessage(args[0], {
+        text: `${getRandomMessage()}\n\n- Your Bot`,
+      });
+      await conn.groupLeave(args[0]);
+      await m.reply(`✅ Successfully left the group`);
     } else {
-        if (!m.isGroup) return global.dfail('group', m, conn)
-        await m.reply('Byee👋, Bot akan keluar dari group', m.chat) // WKWKW pesannya sama semua. gk kreatif :v
-        await conn.groupLeave(m.chat)
+      if (!m.isGroup) return m.reply("❌ This command only works in groups");
+
+      await conn.sendMessage(m.chat, {
+        text: `${getRandomMessage()}\n\n- Your Bot`,
+      });
+      await conn.groupLeave(m.chat);
     }
-}
+  } catch (error) {
+    console.error("Leave error:", error);
+    await m.reply(`❌ Failed to leave: ${error.message || error}`);
+  }
+};
 
-handler.help = ['gc', 'gcall', 'group'].map(v => 'leave' + v)
-handler.tags = ['owner']
-handler.command = /^leaveg(c|ro?up)(all|semua)?$/i
+handler.help = [
+  "leavegc - Leave current group",
+  "leavegc [jid] - Leave specific group",
+  "leavegcall - Leave all groups",
+];
+handler.tags = ["owner"];
+handler.command = /^leaveg(c|ro?up)(all|semua)?$/i;
+handler.owner = true;
 
-handler.owner = true
-
-module.exports = handler
-
-const delay = time => new Promise(res => setTimeout(res, time))
+module.exports = handler;

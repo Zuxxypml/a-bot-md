@@ -3,215 +3,222 @@ const PDFDocument = require("pdfkit");
 const fs = require("fs");
 const cheerio = require("cheerio");
 
-class Komikcast {
-    async search(query) {
-        try {
-            const response = await axios.get(`https://komikcast.cz/?s=${encodeURIComponent(query)}`);
-            const $ = cheerio.load(response.data);
-            const result = [];
-
-            $(".list-update_item").each((_, element) => {
-                result.push({
-                    title: $(element).find(".title").text().trim(),
-                    link: $(element).find("a").attr("href"),
-                });
-            });
-
-            return result.length > 0 ? result : null;
-        } catch (error) {
-            console.error("Error during search:", error);
-            return null;
+class KomikcastScraper {
+  async search(query) {
+    try {
+      const response = await axios.get(
+        `https://komikcast.cz/?s=${encodeURIComponent(query)}`,
+        {
+          headers: {
+            "User-Agent":
+              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+          },
         }
+      );
+      const $ = cheerio.load(response.data);
+      const results = [];
+
+      $(".list-update_item").each((_, element) => {
+        results.push({
+          title: $(element).find(".title").text().trim(),
+          url: $(element).find("a").attr("href"),
+          thumbnail: $(element).find("img").attr("src"),
+        });
+      });
+
+      return results.length > 0 ? results : null;
+    } catch (error) {
+      console.error("Search error:", error);
+      throw new Error("Failed to search manga");
     }
+  }
 
-    async chapter(url) {
-        try {
-            const { data: html } = await axios.get(url);
-            const $ = cheerio.load(html);
-            const chapters = [];
+  async getChapters(url) {
+    try {
+      const { data } = await axios.get(url);
+      const $ = cheerio.load(data);
+      const chapters = [];
 
-            $(".komik_info-chapters-item").each((index, element) => {
-                const chapterNumber = $(element)
-                    .find(".chapter-link-item")
-                    .text()
-                    .trim()
-                    .replace(/\s+/g, " ");
-                const chapterURL = $(element)
-                    .find(".chapter-link-item")
-                    .attr("href");
-                const timeAgo = $(element)
-                    .find(".chapter-link-time")
-                    .text()
-                    .trim();
+      $(".komik_info-chapters-item").each((_, element) => {
+        chapters.push({
+          number: $(element).find(".chapter-link-item").text().trim(),
+          url: $(element).find(".chapter-link-item").attr("href"),
+          date: $(element).find(".chapter-link-time").text().trim(),
+        });
+      });
 
-                chapters.push({
-                    number: chapterNumber,
-                    url: chapterURL,
-                    timeAgo: timeAgo,
-                });
-            });
-
-            return chapters;
-        } catch (error) {
-            console.error("Error saat mengambil chapter:", error);
-            throw error;
-        }
+      return chapters.reverse(); // Latest first
+    } catch (error) {
+      console.error("Chapter error:", error);
+      throw new Error("Failed to fetch chapters");
     }
+  }
 
-    async detail(url) {
-        try {
-            const { data } = await axios.get(url);
-            const $ = cheerio.load(data);
+  async getDetails(url) {
+    try {
+      const { data } = await axios.get(url);
+      const $ = cheerio.load(data);
 
-            let result = {};
-            result.title = $('.komik_info-content h1').text().trim();
-            result.alternativeTitle = $('.komik_info-content-native').text().trim();
-            result.image = $('.komik_info-cover-image img').attr('src');
-            result.synopsis = $('.komik_info-description-sinopsis p').text().trim();
-            result.lastUpdated = $('.komik_info-content-update time').attr('datetime');
-            result.genres = $('.komik_info-content-genre a')
-                .map((i, el) => $(el).text().trim())
-                .get();
-
-            result.released = $('.komik_info-content-released').text().trim();
-            result.author = $('.komik_info-content-author').text().trim();
-            result.status = $('.komik_info-content-status').text().trim();
-
-            return result; 
-        } catch (error) {
-            console.error('Error:', error);
-            return { error: 'Gagal mengambil data' };
-        }
+      return {
+        title: $(".komik_info-content h1").text().trim(),
+        altTitle: $(".komik_info-content-native").text().trim(),
+        cover: $(".komik_info-cover-image img").attr("src"),
+        synopsis: $(".komik_info-description-sinopsis p").text().trim(),
+        status: $(".komik_info-content-status").text().trim(),
+        author: $(".komik_info-content-author").text().trim(),
+        genres: $(".komik_info-content-genre a")
+          .map((_, el) => $(el).text().trim())
+          .get(),
+        updated: $(".komik_info-content-update time").attr("datetime"),
+      };
+    } catch (error) {
+      console.error("Detail error:", error);
+      throw new Error("Failed to fetch details");
     }
+  }
 
-    async createPdf(url, imageUrl) {
-        // Buat folder tmp jika belum ada
-        if (!fs.existsSync('tmp')) {
-            fs.mkdirSync('tmp');
-        }
+  async generatePDF(url, title) {
+    try {
+      if (!fs.existsSync("temp")) fs.mkdirSync("temp");
+      const pdfPath = `temp/${title.replace(
+        /[^a-z0-9]/gi,
+        "_"
+      )}_${Date.now()}.pdf`;
+      const doc = new PDFDocument();
+      const stream = fs.createWriteStream(pdfPath);
 
-        const pdfPath = `tmp/komik_${Date.now()}.pdf`;
-        const doc = new PDFDocument();
+      doc.pipe(stream);
+      doc.fontSize(18).text(title, { align: "center" });
+      doc.moveDown();
 
-        doc.pipe(fs.createWriteStream(pdfPath));
-        doc.fontSize(14).text(`Komik dari URL: ${url}`, { align: 'center' });
-        
+      // Add manga details
+      const details = await this.getDetails(url);
+      doc.fontSize(12).text(`Author: ${details.author}`);
+      doc.text(`Status: ${details.status}`);
+      doc.text(`Genres: ${details.genres.join(", ")}`);
+      doc.moveDown();
+      doc.text(details.synopsis);
+      doc.addPage();
+
+      // Add cover image if available
+      if (details.cover) {
         try {
-            console.log(`Mengunduh gambar dari: ${imageUrl}`);
-            const gambar = await axios.get(imageUrl, { responseType: 'arraybuffer', headers: { referer: 'https://komikcast.cz/' } });
-            const imgBuffer = Buffer.from(gambar.data, 'binary');
-            doc.image(imgBuffer, { fit: [500, 400], align: 'center' });
-            console.log("Gambar berhasil diunduh dan dimasukkan ke PDF.");
-        } catch (error) {
-            console.error("Gagal mengunduh gambar:", error.message);
-            doc.text("Gambar tidak tersedia", { align: 'center' });
+          const image = await axios.get(details.cover, {
+            responseType: "arraybuffer",
+          });
+          doc.image(Buffer.from(image.data), {
+            fit: [400, 600],
+            align: "center",
+            valign: "center",
+          });
+        } catch (imgError) {
+          console.error("Image error:", imgError);
+          doc.text("[Cover image unavailable]");
         }
+      }
 
-        doc.end(); // Menjamin doc.end() dipanggil
-        console.log("PDF Path:", pdfPath);
-        
-        return pdfPath;
+      doc.end();
+      await new Promise((resolve) => stream.on("finish", resolve));
+      return pdfPath;
+    } catch (error) {
+      console.error("PDF error:", error);
+      throw new Error("Failed to generate PDF");
     }
+  }
 }
 
-const komikcast = new Komikcast();
+const komik = new KomikcastScraper();
 
 let handler = async (m, { conn, usedPrefix, command, text }) => {
-    const input = text.split("#");
+  const [action, ...params] = text.split(" ");
+  const query = params.join(" ");
 
-    switch (input[0]) {
-        case "search":
-            if (!input[1]) return m.reply("Masukkan judul komik");
+  try {
+    await m.reply("🔄 Processing your request...");
 
-            try {
-                await m.reply("Tunggu sebentar...");
-                const searchResults = await komikcast.search(input[1]);
-                let caption = `Komikcast Search\n\nGunakan \n- ${usedPrefix}komikcast chapter#url\n- ${usedPrefix}komikcast detail#url\n\n`;
+    switch (action.toLowerCase()) {
+      case "search":
+        if (!query) throw "Please provide a manga title";
+        const results = await komik.search(query);
+        if (!results?.length) throw "No manga found";
 
-                if (searchResults) {
-                    searchResults.forEach((result, index) => {
-                        caption += `${index + 1}. ${result.title}\n${result.link}\n\n`;
-                    });
-                } else {
-                    caption += "Tidak ada hasil yang ditemukan.";
-                }
+        let searchMsg = "🔍 *Search Results*\n\n";
+        results.slice(0, 5).forEach((res, i) => {
+          searchMsg += `${i + 1}. ${res.title}\n${res.url}\n\n`;
+        });
+        searchMsg += `Use ${usedPrefix}${command} detail [url] for more info`;
+        await m.reply(searchMsg);
+        break;
 
-                await m.reply(caption);
-            } catch (error) {
-                console.error("Error during search:", error);
-                await m.reply("Terjadi kesalahan saat mencari komik.");
-            }
-            break;
+      case "detail":
+        if (!query) throw "Please provide a manga URL";
+        const details = await komik.getDetails(query);
 
-        case "chapter":
-            if (!input[1]) return m.reply("Masukkan URL komikcast");
+        await conn.sendMessage(
+          m.chat,
+          {
+            image: { url: details.cover },
+            caption:
+              `📚 *${details.title}*\n\n` +
+              `📌 Alternate: ${details.altTitle}\n` +
+              `✍️ Author: ${details.author}\n` +
+              `📊 Status: ${details.status}\n` +
+              `🏷️ Genres: ${details.genres.join(", ")}\n\n` +
+              `📖 Synopsis:\n${details.synopsis}\n\n` +
+              `Use ${usedPrefix}${command} chapters [url] to see chapters`,
+          },
+          { quoted: m }
+        );
+        break;
 
-            try {
-                await m.reply("Tunggu sebentar...");
-                const chapters = await komikcast.chapter(input[1]);
-                let caption = `Komikcast Chapter\n\nGunakan ${usedPrefix}komikcast pdf#url\n\n`;
+      case "chapters":
+        if (!query) throw "Please provide a manga URL";
+        const chapters = await komik.getChapters(query);
 
-                chapters.forEach((chapter, index) => {
-                    caption += `${index + 1}. ${chapter.number}: ${chapter.url}\n`;
-                });
+        let chaptersMsg = `📖 *Available Chapters*\n\n`;
+        chapters.slice(0, 10).forEach((ch) => {
+          chaptersMsg += `• ${ch.number} (${ch.date})\n${ch.url}\n\n`;
+        });
+        if (chapters.length > 10)
+          chaptersMsg += `+ ${chapters.length - 10} more chapters...`;
+        await m.reply(chaptersMsg);
+        break;
 
-                await m.reply(caption);
-            } catch (error) {
-                console.error("Error fetching chapter:", error);
-                await m.reply("Terjadi kesalahan saat mengambil chapter.");
-            }
-            break;
+      case "pdf":
+        if (!query) throw "Please provide a manga URL";
+        const pdfPath = await komik.generatePDF(query, "Manga_Info");
+        await conn.sendFile(
+          m.chat,
+          pdfPath,
+          "manga_info.pdf",
+          "Here is your manga info PDF",
+          m
+        );
+        fs.unlinkSync(pdfPath);
+        break;
 
-        case "detail":
-            if (!input[1]) return m.reply("Masukkan URL komikcast");
-
-            try {
-                await m.reply("Tunggu sebentar...");
-                const detailData = await komikcast.detail(input[1]);
-                const detailCaption = generateCaption(detailData);
-
-                await conn.sendMessage(
-                    m.chat,
-                    {
-                        image: { url: detailData.image },
-                        caption: detailCaption,
-                    },
-                    { quoted: m }
-                );
-            } catch (error) {
-                console.error("Error fetching detail:", error);
-                await m.reply("Terjadi kesalahan saat mengambil detail.");
-            }
-            break;
-
-        case "pdf":
-            if (!input[1]) return m.reply("Masukkan URL dari komikcast");
-
-            try {
-                await m.reply("Tunggu sebentar...");
-                const komikUrl = input[1];
-                const imageUrl = 'URL_GAMBAR_DINAMIS'; 
-                const pdfPath = await komikcast.createPdf(komikUrl, imageUrl);
-                const pdfBuffer = fs.readFileSync(pdfPath);
-
-                await conn.sendFile(m.chat, pdfBuffer, 'komik.pdf', `PDF untuk ${komikUrl}`, m);
-                fs.unlinkSync(pdfPath);
-            } catch (error) {
-                console.error("Error generating PDF:", error.message);
-                await m.reply("Terjadi kesalahan saat membuat PDF.");
-            }
-            break;
-
-        default:
-            await m.reply(`Perintah tidak dikenal. Gunakan:\n${usedPrefix}komikcast search#judul\n${usedPrefix}komikcast chapter#url\n${usedPrefix}komikcast detail#url\n${usedPrefix}komikcast pdf#url`);
+      default:
+        throw (
+          `Invalid action. Usage:\n` +
+          `${usedPrefix}${command} search [title]\n` +
+          `${usedPrefix}${command} detail [url]\n` +
+          `${usedPrefix}${command} chapters [url]\n` +
+          `${usedPrefix}${command} pdf [url]`
+        );
     }
+  } catch (error) {
+    console.error("Handler error:", error);
+    await m.reply(`❌ Error: ${error.message || error}`);
+  }
 };
 
-const generateCaption = (data) => {
-    return `Judul: ${data.title}\nAlternatif: ${data.alternativeTitle}\nGenre: ${data.genres.join(", ")}\nStatus: ${data.status}\nSinopsis: ${data.synopsis}`;
-};
-
-handler.help = handler.command = ['komikcast'];
-handler.tags = ['anime'];
+handler.help = [
+  "komik search <title>",
+  "komik detail <url>",
+  "komik chapters <url>",
+  "komik pdf <url>",
+];
+handler.tags = ["manga"];
+handler.command = /^(komik|manga)$/i;
 
 module.exports = handler;

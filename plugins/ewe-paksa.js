@@ -1,88 +1,88 @@
 let handler = async (m, { conn }) => {
-    let users = m.mentionedJid[0];
-    if (!users) {
-        conn.reply(m.chat, `Tag pengguna yang ingin ditarget!`, m);
-        return;
-    }
+  let users = m.mentionedJid[0];
+  if (!users) {
+    conn.reply(m.chat, `Tag the user you want to target!`, m);
+    return;
+  }
 
-    let name = global.db.data.users[users]?.name || 'Pengguna';
-    let user = global.db.data.users[m.sender];
-    let id = m.sender;
-    let kerja = 'ewe-paksa';
-    conn.misi = conn.misi ? conn.misi : {};
+  let name = global.db.data.users[users]?.name || "User";
+  let user = global.db.data.users[m.sender];
+  let id = m.sender;
+  let kerja = "forced-sex";
+  conn.mission = conn.mission ? conn.mission : {};
 
-    if (id in conn.misi) {
-        conn.reply(m.chat, `Selesaikan Misi ${conn.misi[id][0]} Terlebih Dahulu`, m);
-        throw false;
-    }
+  if (id in conn.mission) {
+    conn.reply(m.chat, `Complete the Mission ${conn.mission[id][0]} first!`, m);
+    throw false;
+  }
 
-    let randomaku1 = Math.floor(Math.random() * 1000000);
-    let randomaku2 = Math.floor(Math.random() * 10000);
+  let randomMoney = Math.floor(Math.random() * 1000000);
+  let randomExp = Math.floor(Math.random() * 10000);
 
-    let dimas = `
-👙 kamu paksa
-     dia buka baju😋
+  let dimas = `
+👙 You forced
+     them to take off their clothes 😋
 `.trim();
 
-    let dimas2 = `
+  let dimas2 = `
 🥵💦 sszz Ahhhh.....
 `.trim();
 
-    let dimas3 = `
-🥵Ahhhh, Sakitttt!! >////<
+  let dimas3 = `
+🥵Ahhhh, It hurts!! >////<
  💦Crotttt.....
-  💦Crottt lagi
+  💦Crottt again
 `.trim();
 
-    let dimas4 = `
+  let dimas4 = `
 🥵💦💦Ahhhhhh😫
 `.trim();
 
-    let hsl = `
-*—[ Hasil Ewe Paksa ${name} ]—*
-➕ 💹 Uang = [ ${randomaku1} ]
-➕ ✨ Exp = [ ${randomaku2} ]
+  let result = `
+*—[ Forced Sex Result with ${name} ]—*
+➕ 💹 Money = [ ${randomMoney} ]
+➕ ✨ Exp = [ ${randomExp} ]
 `.trim();
 
-    user.exp += randomaku2;
+  user.exp += randomExp;
 
-    conn.misi[id] = [
-        kerja,
-        setTimeout(() => {
-            delete conn.misi[id];
-        }, 27000)
-    ];
-
+  conn.mission[id] = [
+    kerja,
     setTimeout(() => {
-        m.reply(hsl);
-    }, 27000);
+      delete conn.mission[id];
+    }, 27000),
+  ];
 
-    setTimeout(() => {
-        m.reply(dimas4);
-    }, 25000);
+  setTimeout(() => {
+    m.reply(result);
+  }, 27000);
 
-    setTimeout(() => {
-        m.reply(dimas3);
-    }, 20000);
+  setTimeout(() => {
+    m.reply(dimas4);
+  }, 25000);
 
-    setTimeout(() => {
-        m.reply(dimas2);
-    }, 15000);
+  setTimeout(() => {
+    m.reply(dimas3);
+  }, 20000);
 
-    setTimeout(() => {
-        m.reply(dimas);
-    }, 10000);
+  setTimeout(() => {
+    m.reply(dimas2);
+  }, 15000);
 
-    setTimeout(() => {
-        m.reply('😋mulai ewe paksa..');
-    }, 0);
+  setTimeout(() => {
+    m.reply(dimas);
+  }, 10000);
 
-    user.lastmisi = new Date * 1;
+  setTimeout(() => {
+    m.reply("😋starting forced sex..");
+  }, 0);
+
+  user.lastMission = new Date() * 1;
 };
 
-handler.help = ['ewe-paksa @tag'];
-handler.tags = ['premium', 'fun'];
-handler.command = /^(ewe-paksa)$/i;
+handler.help = ["forced-sex @tag"];
+handler.tags = ["premium", "fun"];
+handler.command = /^(forced-sex)$/i;
 handler.group = true;
 
 module.exports = handler;

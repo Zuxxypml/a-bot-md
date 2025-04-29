@@ -1,56 +1,122 @@
-const axios = require('axios')
-const cheerio = require('cheerio')
-const sharp = require('sharp')
+const axios = require("axios");
+const cheerio = require("cheerio");
+const sharp = require("sharp");
 
-const userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/116.0';
+const userAgent =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/116.0";
 
-async function jarak(dari, ke) {
-    let html = (await axios.get(`https://www.google.com/search?q=${encodeURIComponent('jarak ' + dari + ' ke ' + ke)}&hl=id`, {
-        headers: {
-            'User-Agent': userAgent
-        }
-    })).data;
-    let $ = cheerio.load(html);
-    let obj = {};
-
-    let img = html.split("var s=\'")?.[1]?.split("\'")?.[0];
-    obj.img = /^data:.*?\/.*?;base64,/i.test(img) ? Buffer.from(img.split(',')[1], 'base64') : '';
-
-    // ngambil waktu jarak
-    obj.captions = [];
-    $('div.BbbuR.uc9Qxb.uE1RRc').each((index, element) => {
-        let caption = $(element).text()?.trim();
-        obj.captions.push(caption);
+async function getDistanceInfo(from, to) {
+  try {
+    const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(
+      `distance from ${from} to ${to}`
+    )}&hl=en`;
+    const { data: html } = await axios.get(searchUrl, {
+      headers: { "User-Agent": userAgent },
     });
 
-    return obj;
+    const $ = cheerio.load(html);
+    const result = {};
+
+    // Extract map image
+    const imgData = html.split("var s='")?.[1]?.split("'")?.[0];
+    result.image = /^data:.*?\/.*?;base64,/i.test(imgData)
+      ? Buffer.from(imgData.split(",")[1], "base64")
+      : null;
+
+    // Extract distance and duration info
+    result.info = [];
+    $("div.BbbuR.uc9Qxb.uE1RRc").each((_, element) => {
+      const text = $(element).text().trim();
+      if (text) result.info.push(text);
+    });
+
+    // Generate Google Maps URL
+    result.mapsUrl = `https://www.google.com/maps/dir/${encodeURIComponent(
+      from
+    )}/${encodeURIComponent(to)}/`;
+
+    return result;
+  } catch (error) {
+    console.error("Distance Check Error:", error);
+    throw new Error("Failed to fetch distance information");
+  }
 }
 
 const handler = async (m, { conn, text, usedPrefix, command }) => {
-    let [dari, ke] = text.split('|');
-    if (!dari || !ke) throw `Ex: ${usedPrefix + command} pekalongan|sukabumi`;
+  // Validate input
+  const [from, to] = text.split("|").map((s) => s.trim());
+  if (!from || !to) {
+    return m.reply(
+      `Please specify both locations!\nExample: *${
+        usedPrefix + command
+      } Jakarta|Bandung*`
+    );
+  }
 
-    if (dari.toLowerCase() === ke.toLowerCase()) {
-        conn.reply(m.chat, "hey bung, kau dari kota bodoh mana ?!\nAWOKAWOAKOAK", m);
-        return;
+  // Check if locations are the same
+  if (from.toLowerCase() === to.toLowerCase()) {
+    return m.reply(
+      "Are you trying to measure distance between the same place? 😅"
+    );
+  }
+
+  try {
+    // Send wait message
+    const waitMsg = await m.reply("🗺️ Calculating distance... Please wait...");
+
+    // Get distance info
+    const { image, info, mapsUrl } = await getDistanceInfo(from, to);
+
+    // Prepare response
+    if (info.length === 0) {
+      await conn.sendMessage(m.chat, {
+        delete: waitMsg.key,
+      });
+      return m.reply("Couldn't find distance information for these locations.");
     }
 
-    conn.reply(m.chat, "Tunggu sebentar yah, sedang diminta peta nya...", m);
+    const caption =
+      `🚗 *Distance Information*\n\n` +
+      `${info.join("\n")}\n\n` +
+      `📍 Google Maps: ${mapsUrl}`;
 
-    let result = await jarak(dari, ke);
+    // Send response with image if available
+    if (image) {
+      const optimizedImage = await sharp(image)
+        .resize(800, 600, { fit: "inside" })
+        .jpeg({ quality: 80 })
+        .toBuffer();
 
-    if (result.img) {
-        let imgBuffer = Buffer.from(result.img, 'base64');
-        let resizedImgBuffer = await sharp(imgBuffer).toBuffer();
-
-        conn.sendMessage(m.chat, { image: resizedImgBuffer, caption: result.captions.join('\n') + `\n\nhttps://www.google.com/maps/dir/${encodeURIComponent(dari)}/${encodeURIComponent(ke)}/` }, { quoted: m });
+      await conn.sendMessage(
+        m.chat,
+        {
+          image: optimizedImage,
+          caption: caption,
+          contextInfo: {
+            externalAdReply: {
+              title: `${from} to ${to}`,
+              body: "Distance Calculator",
+              thumbnail: optimizedImage,
+              sourceUrl: mapsUrl,
+            },
+          },
+        },
+        { quoted: m }
+      );
     } else {
-        conn.reply(m.chat, result.captions.join('\n') + `\n\nhttps://www.google.com/maps/dir/${encodeURIComponent(dari)}/${encodeURIComponent(ke)}/`, m);
+      await conn.sendMessage(m.chat, { text: caption }, { quoted: m });
     }
+
+    // Delete wait message
+    await conn.sendMessage(m.chat, { delete: waitMsg.key });
+  } catch (error) {
+    console.error("Handler Error:", error);
+    m.reply("⚠️ Failed to get distance information. Please try again later.");
+  }
 };
 
-handler.help = ['jarak', 'gmaps'].map(v => v + ' dari|ke');
-handler.tags = ['tools'];
-handler.command = /^(jarak|gmaps)$/i;
+handler.help = ["distance <from>|<to> - Get distance between locations"];
+handler.tags = ["tools", "maps"];
+handler.command = /^(distance|gmaps|jarak)$/i;
 
-module.exports = handler
+module.exports = handler;

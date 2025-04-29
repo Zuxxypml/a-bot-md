@@ -1,39 +1,72 @@
-let handler = (m, { text, usedPrefix, command }) => {
-	let teks = text || (m.quoted && m.quoted.text) || false;
-    if (!teks) throw '_Masukkan teks!_\n\nContoh\n' + usedPrefix + command + ' ' + global.author;
-	let japan = teks.replace(/[a-z]/gi, v => {
-		switch (v.toLowerCase()) {
-			case 'a': return 'ka'
-			case 'b': return 'zu'
-			case 'c': return 'mi'
-			case 'd': return 'te'
-			case 'e': return 'ku'
-			case 'f': return 'lu'
-			case 'g': return 'ji'
-			case 'h': return 'ri'
-			case 'i': return 'ki'
-			case 'j': return 'zus'
-			case 'k': return 'me'
-			case 'l': return 'ta'
-			case 'm': return 'rin'
-			case 'n': return 'to'
-			case 'o': return 'mo'
-			case 'p': return 'no'
-			case 'q': return 'ke'
-			case 'r': return 'shi'
-			case 's': return 'ari'
-			case 't': return 'chi'
-			case 'u': return 'do'
-			case 'v': return 'ru'
-			case 'w': return 'mei'
-			case 'x': return 'na'
-			case 'y': return 'fu'
-			case 'z': return 'zi'
-		}
-	})
-	m.reply(`Nama jepang:\n\n*${japan[0].toUpperCase() + japan.substring(1)}*`)
-}
-handler.tags = ['fun']
-handler.command = handler.help = ['japan']
+const handler = (m, { text, usedPrefix, command }) => {
+  // Get input text from message or quoted message
+  const input = text || m.quoted?.text || false;
 
-module.exports = handler
+  if (!input) {
+    const example = "John";
+    return m.reply(
+      `✏️ *Japanese Name Generator*\n\n` +
+        `Please enter a name to convert!\n\n` +
+        `Example: *${usedPrefix}${command} ${example}*\n` +
+        `Try: *${usedPrefix}${command} ${global.author || "your name"}*`
+    );
+  }
+
+  // Japanese character mapping
+  const japaneseMap = {
+    a: "ka",
+    b: "zu",
+    c: "mi",
+    d: "te",
+    e: "ku",
+    f: "lu",
+    g: "ji",
+    h: "ri",
+    i: "ki",
+    j: "zus",
+    k: "me",
+    l: "ta",
+    m: "rin",
+    n: "to",
+    o: "mo",
+    p: "no",
+    q: "ke",
+    r: "shi",
+    s: "ari",
+    t: "chi",
+    u: "do",
+    v: "ru",
+    w: "mei",
+    x: "na",
+    y: "fu",
+    z: "zi",
+  };
+
+  // Convert each character
+  let japaneseName = input
+    .toLowerCase()
+    .split("")
+    .map((char) => {
+      // Handle non-alphabetic characters
+      if (!/[a-z]/i.test(char)) return char;
+      return japaneseMap[char] || char;
+    })
+    .join("");
+
+  // Capitalize first letter
+  japaneseName = japaneseName.charAt(0).toUpperCase() + japaneseName.slice(1);
+
+  // Send result with formatted message
+  m.reply(
+    `🌸 *Japanese Name Generator* 🌸\n\n` +
+      `Original: *${input}*\n` +
+      `Japanese: *${japaneseName}*\n\n` +
+      `Try another name with *${usedPrefix}${command} [name]*`
+  );
+};
+
+handler.tags = ["fun", "language"];
+handler.command = handler.help = ["japanesename", "japan"];
+handler.example = `${usedPrefix}japanesename Alice`;
+
+module.exports = handler;

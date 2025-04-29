@@ -1,31 +1,44 @@
-// Fungsi untuk mengimpor secara dinamis Gemini dari module ESM
+// Function to dynamically import Gemini from ESM module
 const loadGemini = async () => {
-  const { Gemini } = await import("gemini-g4f");  // Mengimpor menggunakan import dinamis
-  return new Gemini("");
+  const { Gemini } = await import("gemini-g4f"); // Using dynamic import
+  return new Gemini(""); // Initialize with empty API key
 };
 
 let handler = async (m, { conn, text, usedPrefix, command }) => {
+  // Check if prompt is provided
   if (!text) {
     return m.reply(
-      `Masukkan Prompt!\n\nContoh: *${usedPrefix + command} apakah kamu gpt4?*`, m
+      `Please enter your prompt!\n\nExample: *${
+        usedPrefix + command
+      } are you gpt4?*`,
+      m
     );
   }
 
-  // Memuat Gemini menggunakan dynamic import
-  const gemini = await loadGemini();
+  try {
+    // Load Gemini using dynamic import
+    const gemini = await loadGemini();
 
-  let res = await gemini.ask(text, {
-    model: "gemini-1.5-pro-latest",
-  });
+    // Get response from Gemini
+    let res = await gemini.ask(text, {
+      model: "gemini-1.5-pro-latest", // Using latest model
+    });
 
-  conn.reply(m.chat, res, m);
+    // Send response
+    conn.reply(m.chat, res, m);
+  } catch (error) {
+    console.error("Gemini error:", error);
+    m.reply(
+      "Sorry, there was an error processing your request. Please try again later."
+    );
+  }
 };
 
-// Penamaan command handler
+// Command configuration
 handler.command = /^(gemini2)$/i;
-handler.help = ["gemini2"];
+handler.help = ["gemini2 <prompt> - Get response from Gemini AI"];
 handler.tags = ["ai"];
 handler.limit = true;
 
-// Ekspor handler menggunakan CommonJS
+// Export handler using CommonJS
 module.exports = handler;

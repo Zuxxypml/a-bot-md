@@ -1,33 +1,50 @@
-let levelling = require('../lib/levelling')
+const levelling = require("../lib/levelling");
 
-let handler = async (m, { conn }) => {
-  let user = global.db.data.users[m.sender]
+const handler = async (m, { conn }) => {
+  const user = global.db.data.users[m.sender];
 
+  // Check if user can level up
   if (!levelling.canLevelUp(user.level, user.exp, global.multiplier)) {
-    let { min, xp, max } = levelling.xpRange(user.level, global.multiplier)
+    const { min, xp, max } = levelling.xpRange(user.level, global.multiplier);
+    const neededXP = max - user.exp;
+    const progress = Math.round(((user.exp - min) / xp) * 100);
 
-    throw `
-Kamu sekarang Level *${user.level} (${user.exp - min}/${xp})*
-Kurang *${max - user.exp}* lagi untuk levelup
-`.trim()
+    return conn.reply(
+      m.chat,
+      `📊 *Level Progress*\n\n` +
+        `Current Level: *${user.level}*\n` +
+        `XP: ${user.exp - min}/${xp} (${progress}%)\n` +
+        `You need *${neededXP}* more XP to level up!\n\n` +
+        `Keep chatting to gain more XP!`,
+      m
+    );
   }
-  let before = user.level * 1
-  while (levelling.canLevelUp(user.level, user.exp, global.multiplier)) user.level++
 
-
-  if (before !== user.level) {
-    conn.reply(m.chat, `
-Selamat, anda telah naik level!
-*${before}* -> *${user.level}*
-Reward: Claim lebih banyak XP Harian seiring naiknya level 
-Role kamu sekarang: *${user.role}*
-	`.trim(), m)
+  // Level up process
+  const oldLevel = user.level;
+  while (levelling.canLevelUp(user.level, user.exp, global.multiplier)) {
+    user.level++;
   }
-}
 
-handler.help = ['levelup']
-handler.tags = ['xp']
+  // Level up rewards
+  const levelDiff = user.level - oldLevel;
+  const rewardMultiplier = 1 + user.level * 0.1; // 10% more daily XP per level
 
-handler.command = /^levelup$/i
+  conn.reply(
+    m.chat,
+    `🎉 *LEVEL UP!* 🎉\n\n` +
+      `From: *Level ${oldLevel}*\n` +
+      `To: *Level ${user.level}* (+${levelDiff})\n\n` +
+      `✨ *Rewards Unlocked* ✨\n` +
+      `• Daily XP bonus: *${rewardMultiplier.toFixed(1)}x*\n` +
+      `• New role: *${user.role || "Member"}*\n\n` +
+      `Keep going to reach higher levels!`,
+    m
+  );
+};
 
-module.exports = handler
+handler.help = ["levelup - Check your level progress"];
+handler.tags = ["xp", "game"];
+handler.command = /^levelup|lvl|level$/i;
+
+module.exports = handler;
