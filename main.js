@@ -23,6 +23,7 @@
   const simple = require("./lib/simple");
   const more = String.fromCharCode(8206);
   const readMore = more.repeat(4001);
+
   var low;
   try {
     low = require("lowdb");
@@ -30,7 +31,9 @@
     low = require("./lib/lowdb");
   }
   const { Low, JSONFile } = low;
-  const mongoDB = require("./lib/mongoDB");
+
+  // ← here’s the fix: destructure the class
+  const { mongoDB } = require("./lib/mongoDB");
 
   const NodeCache = require("node-cache");
   const rl = readline.createInterface({
@@ -60,27 +63,27 @@
           })
         )
       : "");
-  global.timestamp = {
-    start: new Date(),
-  };
+
+  global.timestamp = { start: new Date() };
 
   global.opts = new Object(
     yargs(process.argv.slice(2)).exitProcess(false).parse()
   );
-  // console.log({ opts })
   global.prefix = new RegExp("^[" + (opts["prefix"] || "!+/#.") + "]");
   const store = makeInMemoryStore({
     logger: P().child({ level: "fatal", stream: "store" }),
   });
 
+  // ← destructured mongoDB now works as a constructor
   global.db = new Low(
     /https?:\/\//.test(opts["db"] || "")
       ? new cloudDBAdapter(opts["db"])
-      : /mongodb/.test(opts["db"])
+      : /mongodb/.test(opts["db"] || "")
       ? new mongoDB(opts["db"])
       : new JSONFile(`${opts._[0] ? opts._[0] + "_" : ""}database.json`)
   );
   global.DATABASE = global.db; // Backwards Compatibility
+
   global.loadDatabase = async function loadDatabase() {
     if (global.db.READ)
       return new Promise((resolve) =>
@@ -91,7 +94,7 @@
                 global.db.data == null ? global.loadDatabase() : global.db.data
               ))
             : null;
-        }, 1 * 1000)
+        }, 1000)
       );
     if (global.db.data !== null) return;
     global.db.READ = true;
@@ -113,9 +116,6 @@
   };
   loadDatabase();
 
-  // if (opts['cluster']) {
-  //   require('./lib/cluster').Cluster()
-  // }
   const authFile = `${opts._[0] || "session"}`;
   global.isInit = !fs.existsSync(authFile);
   const { state, saveState, saveCreds } = await useMultiFileAuthState(authFile);
@@ -166,7 +166,6 @@
         chalk.bgBlack(chalk.greenBright(`Please type your WhatsApp number : `))
       );
       phoneNumber = phoneNumber.replace(/[^0-9]/g, "");
-      // Ask again when entering the wrong number
       if (
         !Object.keys(PHONENUMBER_MCC).some((v) => phoneNumber.startsWith(v))
       ) {
