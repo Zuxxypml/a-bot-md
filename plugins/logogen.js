@@ -2,13 +2,17 @@ const axios = require("axios");
 
 const handler = async (m, { conn, text }) => {
   if (!text) {
-    return m.reply("Masukkan judul, ide, dan slogan logo. Format: .logogen Judul|Ide|Slogan");
+    return m.reply(
+      "Please enter logo title, idea, and slogan. Format: .logogen Title|Idea|Slogan"
+    );
   }
 
   const [title, idea, slogan] = text.split("|");
 
   if (!title || !idea || !slogan) {
-    return m.reply("Format salah. Gunakan : .logogen Judul|Ide|Slogan\n\n*Example :* .logogen Elaina|imut imut |jangan di claim yah");
+    return m.reply(
+      "Wrong format. Use: .logogen Title|Idea|Slogan\n\n*Example:* .logogen Elaina|cute anime girl |don't claim this"
+    );
   }
 
   try {
@@ -23,17 +27,20 @@ const handler = async (m, { conn, text }) => {
       slogan: slogan,
       title: title,
       whiteEdge: 80,
-      width: 400
+      width: 400,
     };
 
-    const { data } = await axios.post("https://www.sologo.ai/v1/api/logo/logo_generate", payload);
-    
+    const { data } = await axios.post(
+      "https://www.sologo.ai/v1/api/logo/logo_generate",
+      payload
+    );
+
     if (!data.data.logoList || data.data.logoList.length === 0) {
-      return m.reply("Gagal Membuat Logo");
+      return m.reply("Failed to Generate Logo");
     }
 
-    const logoUrls = data.data.logoList.map(logo => logo.logo_thumb);
-    
+    const logoUrls = data.data.logoList.map((logo) => logo.logo_thumb);
+
     for (const url of logoUrls) {
       await conn.sendMessage(m.chat, { image: { url: url } });
     }
@@ -43,8 +50,8 @@ const handler = async (m, { conn, text }) => {
   }
 };
 
-handler.help = ['logogen'];
-handler.command = ['logogen'];
-handler.tags = ['tools'];
+handler.help = ["logogen"];
+handler.command = ["logogen"];
+handler.tags = ["tools"];
 
 module.exports = handler;

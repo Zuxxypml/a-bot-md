@@ -1,14 +1,25 @@
+const fs = require("fs");
+
 let handler = async (m, { text, usedPrefix, command }) => {
-    if (!text) throw `uhm.. teksnya mana?\n\npenggunaan:\n${usedPrefix + command} <teks>\n\ncontoh:\n${usedPrefix + command} plugins/menu.js`
-    if (!m.quoted.text) throw `balas pesan nya!`
-    let path = `${text}`
-    await require('fs').writeFileSync(path, m.quoted.text)
-    m.reply(`tersimpan di ${path}`)
-}
-handler.help = ['sf'].map(v => v + ' <teks>')
-handler.tags = ['owner']
-handler.command = /^sf$/i
+  // Ensure a filepath argument is provided
+  if (!text) {
+    throw `Please specify a file path.\n\nUsage:\n${
+      usedPrefix + command
+    } <filePath>\n\nExample:\n${usedPrefix + command} plugins/menu.js`;
+  }
+  // Ensure the user replied to a text message
+  if (!m.quoted || !m.quoted.text) {
+    throw `Please reply to the message whose content you want to save.`;
+  }
 
-handler.rowner = true
+  const filePath = text.trim();
+  fs.writeFileSync(filePath, m.quoted.text);
+  m.reply(`✅ Content has been saved to ${filePath}`);
+};
 
-module.exports = handler
+handler.help = ["sf <filePath>"];
+handler.tags = ["owner"];
+handler.command = /^sf$/i;
+handler.rowner = true;
+
+module.exports = handler;

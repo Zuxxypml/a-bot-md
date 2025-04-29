@@ -1,21 +1,31 @@
-let handler = async (m, { conn, usedPrefix: _p, args, text, usedPrefix }) => {
+let handler = async (m, { conn, text, usedPrefix }) => {
+  // Ensure the user replied to a message
+  if (!m.quoted) throw "❗ Please reply to a message to react to it!";
 
-    if (!m.quoted) throw 'Balas Chatnya !'
-    if (text.length > 2) throw 'Cuma Untuk 1 Emoji!'
-    if (!text) throw `📍 Contoh Penggunaan :\n${usedPrefix}react 🗿`
-    conn.relayMessage(m.chat, {
-        reactionMessage: {
-            key: {
-                id: m.quoted.id,
-                remoteJid: m.chat,
-                fromMe: true
-            },
-            text: `${text}`
-        }
-    }, { messageId: m.id })
-}
-handler.help = ['react <emoji>']
-handler.tags = ['tools']
-handler.command = /^(react)$/i
+  // Ensure exactly one emoji is provided
+  if (!text) throw `📍 Usage:\n${usedPrefix}react <emoji>`;
+  if (text.length > 2) throw "❗ Only one emoji is allowed!";
 
-module.exports = handler
+  // Relay the reaction
+  conn.relayMessage(
+    m.chat,
+    {
+      reactionMessage: {
+        key: {
+          id: m.quoted.id,
+          remoteJid: m.chat,
+          fromMe: true,
+        },
+        text: text,
+      },
+    },
+    { messageId: m.id }
+  );
+};
+
+handler.help = ["react <emoji>"];
+handler.tags = ["tools"];
+handler.command = /^(react)$/i;
+handler.limit = true;
+
+module.exports = handler;

@@ -1,22 +1,32 @@
-/*
-   Silahkan Di Pakek
-   Tapi Bantu Rapihin :v
-   Buatan: Miaweers
-*/
+/**
+ * Update the bot’s profile picture.
+ * Usage: Reply to an image with the command.
+ */
 
-let handler = async (m, { conn, args }) => {
-    let bot = conn.user.jid // Bot
-    let q = m.quoted ? m.quoted : m
-    let mime = (q.msg || q).mimetype || ''
-    if (/image/.test(mime)) {
-      let img = await q.download()
-      if (!img) throw `Foto tidak ditemukan`
-     conn.updateProfilePicture (bot, img)
-    conn.reply(m.chat, 'Sukses Mengganti Foto Profile Bot!', m)
-	}
-    }
-handler.help = ['setbotpp']
-handler.command = /^(setbotpp)$/i
-handler.owner = true
+let handler = async (m, { conn }) => {
+  const botJid = conn.user.jid;
+  const msg = m.quoted || m;
+  const mime = (msg.msg || msg).mimetype || "";
 
-module.exports = handler
+  // Ensure the user replied to an image
+  if (!/image\/(jpe?g|png)/.test(mime)) {
+    throw "❗️ Please reply to a JPEG or PNG image.";
+  }
+
+  // Download the image buffer
+  const imgBuffer = await msg.download();
+  if (!imgBuffer) {
+    throw "❗️ Failed to download the image.";
+  }
+
+  // Update the bot's profile picture
+  await conn.updateProfilePicture(botJid, imgBuffer);
+  await conn.reply(m.chat, "✅ Bot profile picture updated successfully!", m);
+};
+
+handler.help = ["setbotpp"];
+handler.tags = ["owner"];
+handler.command = /^(setbotpp)$/i;
+handler.owner = true;
+
+module.exports = handler;

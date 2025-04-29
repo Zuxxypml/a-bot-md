@@ -1,108 +1,133 @@
-const { sticker } = require('../lib/sticker')
-const { EmojiAPI } = require("emoji-api")
-const emoji = new EmojiAPI()
+const { sticker } = require("../lib/sticker");
+const { EmojiAPI } = require("emoji-api");
+const emoji = new EmojiAPI();
+
+// Supported platforms and their aliases
+const platforms = {
+  apple: ["ap", "ip", "apple"],
+  facebook: ["fb", "fa", "facebook"],
+  google: ["go", "google"],
+  htc: ["ht", "htc"],
+  lg: ["lg"],
+  microsoft: ["mi", "mc", "microsoft"],
+  mozilla: ["mo", "moz", "mozilla"],
+  openmoji: ["op", "omoji", "openmoji"],
+  pixel: ["pi", "pixel"],
+  samsung: ["sa", "ss", "samsung"],
+  twitter: ["tw", "twitter"],
+  whatsapp: ["wa", "wh", "whatsapp"],
+};
+
+// Help message
+const helpMessage = `
+╔══「 Emoji to Sticker 」══╗
+╟ Usage: ${usedPrefix}emo [platform] <emoji>
+╟ 
+╟ Example: ${usedPrefix}emo wa ❤️
+╟ 
+╟ Supported Platforms:
+╟ ap - Apple
+╟ fb - Facebook
+╟ go - Google
+╟ ht - HTC
+╟ lg - LG
+╟ mi - Microsoft
+╟ mo - Mozilla
+╟ op - OpenMoji
+╟ pi - Pixel
+╟ sa - Samsung
+╟ tw - Twitter
+╟ wa - WhatsApp (default)
+╚═══════════════════╝
+`.trim();
 
 let handler = async (m, { usedPrefix, conn, args, text }) => {
-  let er = `_Masukkan emoji_
+  // Input validation
+  if (!text) throw helpMessage;
 
-_Hanya bisa 1 emoji saja_
-Contoh:
-*${usedPrefix}emo wa ❤️*
+  // Extract platform and emoji
+  let platform = "whatsapp"; // default
+  let emojiText = text;
 
-Jika tanpa type, 
-maka default nya adalah WhatsApp
-
-╔══「 Pilihan Type 」
-╟ ap = apple
-╟ fb = facebook
-╟ go = google
-╟ ht = htc
-╟ lg
-╟ mi = microsoft
-╟ mo = mozilla
-╟ op = openmoji
-╟ pi = pixel
-╟ sa = samsung
-╟ tw = twitter
-╟ wa = whatsapp
-╚════════════════`.trim()
-  if (!(args[0] || args[1])) throw er
-  let template = 'wa'
-  if (args[0].length == 3) template = args[0].toLowerCase()
-  let emo = args.join(' ').replace(/[A-Za-z]/g, '')
-  try {
-    let res = await emoji.get(emo.trim())
-    let stik = res.images
-    let stiker
-    switch (template) {
-      case 'apple':
-      case 'ip':
-      case 'ap':
-        stiker = stik[0]
-        break
-      case 'facebook':
-      case 'fb':
-      case 'fa':
-        stiker = stik[6]
-        break
-      case 'google':
-      case 'go':
-        stiker = stik[1]
-        break
-      case 'htc':
-      case 'ht':
-        stiker = stik[12]
-        break
-      case 'lg':
-        stiker = stik[11]
-        break
-      case 'microsoft':
-      case 'mc':
-      case 'mi':
-        stiker = stik[3]
-        break
-      case 'mozilla':
-      case 'moz':
-      case 'mo':
-        stiker = stik[13]
-        break
-      case 'openmoji':
-      case 'omoji':
-      case 'op':
-        stiker = stik[8]
-        break
-      case 'pixel':
-      case 'pi':
-        stiker = stik[7]
-        break
-      case 'samsung':
-      case 'ss':
-      case 'sa':
-        stiker = stik[2]
-        break
-      case 'twitter':
-      case 'tw':
-        stiker = stik[5]
-        break
-      case 'whatsapp':
-      case 'wa':
-      case 'wh':
-        stiker = stik[4]
-        break
-
-    }
-    let finish = await sticker(null, stiker.url, global.packname, global.author)
-    //   m.reply(`
-    // Tipe: ${tipe}
-    // Emoji: ${emoji}
-    // `.trim())
-    m.reply(finish)
-  } catch (e) {
-    throw er
+  // Check if platform is specified
+  if (args[0].length <= 3 && !args[0].match(/\p{Emoji}/u)) {
+    platform = args[0].toLowerCase();
+    emojiText = args.slice(1).join(" ").trim();
   }
 
-}
-handler.help = ['emo', 'semoji'].map(v => v + ' [tipe] <emoji>')
-handler.tags = ['stickerother']
-handler.command = /^s?emo(ji)?$/i
-module.exports = handler
+  // Validate emoji input
+  const emojiMatch = emojiText.match(/\p{Emoji}/u);
+  if (!emojiMatch) throw "Please provide a valid emoji!\n" + helpMessage;
+
+  const singleEmoji = emojiMatch[0];
+  if (emojiText.replace(singleEmoji, "").match(/\p{Emoji}/u)) {
+    throw "Please provide only one emoji!\n" + helpMessage;
+  }
+
+  try {
+    // Get emoji data
+    const res = await emoji.get(singleEmoji);
+    if (!res || !res.images) throw "Emoji not found!";
+
+    // Find the correct platform
+    let platformKey =
+      Object.keys(platforms).find((key) => platforms[key].includes(platform)) ||
+      "whatsapp";
+
+    // Get platform index (matches EmojiAPI response structure)
+    const platformIndex = [
+      "apple",
+      "google",
+      "samsung",
+      "microsoft",
+      "whatsapp",
+      "twitter",
+      "facebook",
+      "pixel",
+      "openmoji",
+      "htc",
+      "lg",
+      "mozilla",
+    ].indexOf(platformKey);
+
+    if (platformIndex === -1) throw "Invalid platform!";
+
+    const emojiImage = res.images[platformIndex] || res.images[4]; // fallback to WhatsApp
+
+    // Create sticker
+    const stickerBuffer = await sticker(
+      null,
+      emojiImage.url,
+      global.packname,
+      global.author
+    );
+
+    // Send sticker with additional info
+    await conn.sendMessage(
+      m.chat,
+      {
+        sticker: stickerBuffer,
+        contextInfo: {
+          externalAdReply: {
+            title: `Emoji: ${singleEmoji}`,
+            body: `Platform: ${platformKey}`,
+            thumbnail: await (await fetch(emojiImage.url)).buffer(),
+            mediaType: 1,
+            mediaUrl: "",
+          },
+        },
+      },
+      { quoted: m }
+    );
+  } catch (error) {
+    console.error("Emoji sticker error:", error);
+    throw `Failed to create sticker. Please check:\n1. Your emoji input\n2. Platform selection\n\n${helpMessage}`;
+  }
+};
+
+handler.help = ["emo [platform] <emoji>", "semoji [platform] <emoji>"];
+handler.tags = ["converter", "sticker"];
+handler.command = /^s?emo(ji)?$/i;
+handler.limit = true;
+
+module.exports = handler;

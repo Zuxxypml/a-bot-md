@@ -1,46 +1,66 @@
-let limit = 30
-let yts = require('yt-search')
-let fetch = require('node-fetch')
-const { servers, yta, ytv } = require('../lib/y2mate')
-let handler = async (m, { conn, command, text, isPrems, isOwner, usedPrefix }) => {
-  let txt = text ? text : m.quoted.text
-  if (!txt) throw `Reply Pesan!!`
-  let results = await yts(txt)
-  m.reply(`Memutar lagu *${txt}...*`)
-  let vid = results.all.find(video => video.seconds < 900)
-  if (!vid) throw 'lagu Tidak ditemukan'
-  let isVideo = /2$/.test(command)
-  let yt = false
-  let usedServer = servers[0]
-  for (let i in servers) {
-    let server = servers[i]
+let limit = 30;
+let yts = require("yt-search");
+let fetch = require("node-fetch");
+const { servers, yta, ytv } = require("../lib/y2mate");
+
+let handler = async (
+  m,
+  { conn, command, text, isPrems, isOwner, usedPrefix }
+) => {
+  let query = text || m.quoted?.text;
+  if (!query) throw `🎵 *Please reply with or type the song title.*`;
+
+  m.reply(`🔍 Searching for *${query}*...`);
+
+  let results = await yts(query);
+  let video = results.all.find((v) => v.seconds < 900); // under 15 mins
+
+  if (!video) throw `❌ No suitable song found.`;
+
+  let isVideo = /2$/.test(command); // check if it's for video (not used here)
+  let yt = false;
+  let usedServer = servers[0];
+
+  for (let server of servers) {
     try {
-      yt = await (isVideo ? ytv : yta)(vid.url, server)
-      usedServer = server
-      break
-    } catch (e) {
-      m.reply(`Server ${server} error!${servers.length >= i + 1 ? '' : '\nmencoba server lain...'}`)
+      yt = await (isVideo ? ytv : yta)(video.url, server);
+      usedServer = server;
+      break;
+    } catch (err) {
+      m.reply(`⚠️ Server ${server} failed. Trying another...`);
     }
   }
-  if (yt === false) throw 'Semua server tidak bisa :/'
-  let { dl_link, thumb, title, filesize, filesizeF } = yt
-  let isLimit = (isPrems || isOwner ? 99 : limit) * 1024 < filesize
-  await m.reply(`
-*Judul:* ${title}
-*Source:* ${vid.url} (${filesizeF}) ${isLimit ? `\n_File terlalu besar, Download sendiri pakai Link:_ ${dl_link}` : ''}
-`.trim())
-  let _thumb = {}
-  try { if (isVideo) _thumb = { thumbnail: await (await fetch(thumb)).buffer() } }
-  catch (e) { }
 
-  if (!isLimit) {
-    // no document
-    conn.sendFile(m.chat, dl_link, title + '.mp3', null, m, true, { mimetype: 'audio/mp4' })
+  if (!yt) throw "❌ All servers failed. Please try again later.";
+
+  let { dl_link, thumb, title, filesize, filesizeF } = yt;
+  let sizeLimit = (isPrems || isOwner ? 99 : limit) * 1024;
+  let overLimit = filesize > sizeLimit;
+
+  await m.reply(
+    `
+🎶 *Title:* ${title}
+🔗 *Source:* ${video.url}
+📦 *File Size:* ${filesizeF}
+${overLimit ? `⚠️ File too large. Download manually: ${dl_link}` : ""}
+`.trim()
+  );
+
+  let thumbnail = {};
+  try {
+    if (isVideo) thumbnail = { thumbnail: await (await fetch(thumb)).buffer() };
+  } catch (e) {}
+
+  if (!overLimit) {
+    await conn.sendFile(m.chat, dl_link, `${title}.mp3`, null, m, true, {
+      mimetype: "audio/mp4",
+      ...thumbnail,
+    });
   }
-}
-handler.command = /^playy$/i
+};
 
-handler.exp = 0
-handler.limit = true
+handler.command = /^playy$/i;
+handler.exp = 0;
+handler.limit = true;
 
-module.exports = handler
+module.exports = handler;

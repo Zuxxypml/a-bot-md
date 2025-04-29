@@ -1,254 +1,175 @@
-let { sticker } = require('../lib/sticker.js')
-let axios = require('axios')
- 
-let handler = async (m, { conn, text, usedPrefix , command}) => {
-   let q = m.quoted ? m.quoted : m;
-   let mime = (q.msg || q).mimetype || '';
-   let capt = `*Example:* ${usedPrefix + command} putih,halo selamat datang!
+const { sticker } = require("../lib/sticker.js");
+const axios = require("axios");
 
-*[ ${htjava} L I S T - W A R N A ]*
+let handler = async (m, { conn, text, usedPrefix, command }) => {
+  // Determine the target message (quoted or current)
+  let q = m.quoted ? m.quoted : m;
+  let mime = (q.msg || q).mimetype || "";
 
-╭  ◦ pink
-│  ◦ biru
-│  ◦ merah
-│  ◦ hijau
-│  ◦ kuning
-│  ◦ ungu
-│  ◦ birutua
-│  ◦ birumuda
-│  ◦ abu
-│  ◦ orange
-│  ◦ hitam
-│  ◦ putih
-│  ◦ teal
-│  ◦ merahmuda
-│  ◦ cokelat
-│  ◦ salmon
-│  ◦ magenta
-│  ◦ tan
-│  ◦ wheat
-│  ◦ deeppink
-│  ◦ api
-│  ◦ birulangit
-│  ◦ jingga
-│  ◦ birulangitcerah
-│  ◦ hot pink
-│  ◦ birumudalangit
-│  ◦ hijau laut
-│  ◦ merahtua
-│  ◦ oranyemerah
-│  ◦ cyan
-│  ◦ ungutua
-│  ◦ hijaulumut
-│  ◦ hijaugelap
-│  ◦ birulaut
-│  ◦ oranyetua
-│  ◦ ungukehitaman
-│  ◦ fuchsia
-│  ◦ magenta gelap
-│  ◦ abu-abutua
-│  ◦ peachpuff
-│  ◦ hijautua
-│  ◦ merahgelap
-│  ◦ goldenrod
-│  ◦ abu-abutua
-│  ◦ ungugelap
-│  ◦ emas
-╰  ◦ perak`
-   if (!text) return m.reply(capt)
-   if (text.length > 80) return m.reply('Maksimal 80 Teks!')
-   let teks1 = text.split(',')[0]
-   let teks2 = text.split(',')[1]
-   
-    let pp = await conn.profilePictureUrl(m.sender, 'image').catch(_ => 'https://telegra.ph/file/aa4bf541b17a95f138230.jpg')
-switch(teks1) {
-      case 'pink':
-      backgroundColor = '#f68ac9';
-      break;
-       case 'biru':
-      backgroundColor = '#6cace4';
-      break;
-      case 'merah':
-      backgroundColor = '#f44336';
-      break;
-       case 'hijau':
-      backgroundColor = '#4caf50';
-      break;
-       case 'kuning':
-      backgroundColor = '#ffeb3b';
-      break;
-       case 'ungu':
-      backgroundColor = '#9c27b0';
-      break;
-       case 'birutua':
-      backgroundColor = '#0d47a1';
-      break;
-      case 'birumuda':
-      backgroundColor = '#03a9f4'; 
-      break;
-       case 'abu':
-      backgroundColor = '#9e9e9e';
-      break;
-       case 'orange':
-      backgroundColor = '#ff9800';
-      break;
-       case 'hitam':
-      backgroundColor = '#000000';
-      break;
-      case 'putih':
-      backgroundColor = '#ffffff';
-      break;
-      case 'teal':
-      backgroundColor = '#008080';
-      break;      
-      case 'merahmuda':
-      backgroundColor = '#FFC0CB';
-      break;            
-      case 'cokelat':
-      backgroundColor = '#A52A2A';
-      case 'salmon':
-      backgroundColor = '#FFA07A'; 
-      break;     
-      case 'magenta':
-      backgroundColor = '#FF00FF'; 
-      break;     
-      case 'tan':
-      backgroundColor = '#D2B48C'; 
-       break;    
-      case 'wheat':
-      backgroundColor = '#F5DEB3'; 
-       break;    
-       case 'deeppink':
-      backgroundColor = '#FF1493'; 
-       break;   
-       case 'api':
-      backgroundColor = '#B22222';  
-       break;  
-       case 'birulangit':
-      backgroundColor = '#00BFFF';  
-       break; 
-       case 'jingga':
-      backgroundColor = '#FF7F50';  
-       break;          
-      case 'birulangitcerah':
-      backgroundColor = '#1E90FF';   
-       break; 
-       case 'hotpink':
-      backgroundColor = '#FF69B4';   
-       break; 
-       case 'birumudalangit':
-      backgroundColor = '#87CEEB';   
-       break; 
-       case 'hijaulaut':
-      backgroundColor = '#20B2AA';   
-       break; 
-       case 'merahtua':
-      backgroundColor = '#8B0000';   
-       break; 
-       case 'oranyemerah':
-      backgroundColor = '#FF4500';   
-       break; 
-       case 'cyan':
-      backgroundColor = '#48D1CC';   
-       break; 
-       case 'ungutua':
-      backgroundColor = '#BA55D3';   
-       break; 
-      case 'hijaulumut':
-      backgroundColor = '#00FF7F';   
-       break; 
-       case 'hijaugelap':
-      backgroundColor = '#008000';   
-       break; 
-       case 'birulaut':
-      backgroundColor = '#191970';   
-       break; 
-       case 'oranyetua':
-      backgroundColor = '#FF8C00';   
-       break; 
-       case 'ungukehitaman':
-      backgroundColor = '#9400D3';   
-       break; 
-       case 'fuchsia':
-      backgroundColor = '#FF00FF';   
-       break; 
-       case 'magentagelap':
-      backgroundColor = '#8B008B';   
-       break;                      
-       case 'abu-abutua':
-      backgroundColor = '#2F4F4F';   
-       break;        
-       case 'peachpuff':
-      backgroundColor = '#FFDAB9';   
-       break;        
-       case 'hijautua':
-       backgroundColor = '#BDB76B';   
-       break;        
-       case 'merahgelap':
-      backgroundColor = '#DC143C';   
-       break;        
-       case 'goldenrod':
-      backgroundColor = '#DAA520';   
-       break;        
-       case 'abu-abutua':
-      backgroundColor = '#696969';   
-       break;        
-      case 'ungugelap':
-      backgroundColor = '#483D8B';   
-       break;        
-       case 'emas':
-      backgroundColor = '#FFD700';   
-       break;        
-       case 'perak':
-      backgroundColor = '#C0C0C0';   
-       break;
-      default:
-      throw '[ ! ] Warna yang dipilih tidak tersedia. \n\n' + capt ;
-  }
-conn.sendMessage(m.chat, {
-        react: {
-          text: "🕛",
-          key: m.key,
+  // Usage prompt with available colors
+  const usage = `*Example:* ${usedPrefix + command} blue,Hello world!
+
+*Available Colors:*
+• pink
+• blue
+• red
+• green
+• yellow
+• purple
+• navy
+• lightblue
+• gray
+• orange
+• black
+• white
+• teal
+• hotpink
+• brown
+• salmon
+• magenta
+• tan
+• wheat
+• deeppink
+• firebrick
+• skyblue
+• coral
+• dodgerblue
+• lightskyblue
+• seagreen
+• darkred
+• orangered
+• cyan
+• darkorchid
+• limegreen
+• darkgreen
+• midnightblue
+• darkorange
+• darkviolet
+• fuchsia
+• darkmagenta
+• dimgray
+• peachpuff
+• darkkhaki
+• crimson
+• goldenrod
+• silver`;
+
+  if (!text) return m.reply(usage);
+  if (text.length > 80) return m.reply("❗ Maximum 80 characters allowed.");
+
+  // Split into color and message
+  let [colorName, messageText] = text.split(",");
+  messageText = (messageText || colorName).trim();
+  colorName = colorName.trim().toLowerCase();
+
+  // Load user's profile picture or fallback
+  let pp = await conn
+    .profilePictureUrl(m.sender, "image")
+    .catch(() => "https://telegra.ph/file/aa4bf541b17a95f138230.jpg");
+
+  // Map of English color names to hex codes
+  const colorMap = {
+    pink: "#FFC0CB",
+    blue: "#0000FF",
+    red: "#FF0000",
+    green: "#008000",
+    yellow: "#FFFF00",
+    purple: "#800080",
+    navy: "#000080",
+    lightblue: "#ADD8E6",
+    gray: "#808080",
+    orange: "#FFA500",
+    black: "#000000",
+    white: "#FFFFFF",
+    teal: "#008080",
+    hotpink: "#FF69B4",
+    brown: "#A52A2A",
+    salmon: "#FA8072",
+    magenta: "#FF00FF",
+    tan: "#D2B48C",
+    wheat: "#F5DEB3",
+    deeppink: "#FF1493",
+    firebrick: "#B22222",
+    skyblue: "#87CEEB",
+    coral: "#FF7F50",
+    dodgerblue: "#1E90FF",
+    lightskyblue: "#87CEFA",
+    seagreen: "#2E8B57",
+    darkred: "#8B0000",
+    orangered: "#FF4500",
+    cyan: "#00FFFF",
+    darkorchid: "#9932CC",
+    limegreen: "#32CD32",
+    darkgreen: "#006400",
+    midnightblue: "#191970",
+    darkorange: "#FF8C00",
+    darkviolet: "#9400D3",
+    fuchsia: "#FF00FF",
+    darkmagenta: "#8B008B",
+    dimgray: "#696969",
+    peachpuff: "#FFDAB9",
+    darkkhaki: "#BDB76B",
+    crimson: "#DC143C",
+    goldenrod: "#DAA520",
+    silver: "#C0C0C0",
+  };
+
+  let backgroundColor = colorMap[colorName];
+  if (!backgroundColor) return m.reply(`❌ Color not available.\n\n${usage}`);
+
+  // React with a processing indicator
+  conn.sendMessage(m.chat, {
+    react: { text: "🕛", key: m.key },
+  });
+
+  // Build the quote payload
+  const quotePayload = {
+    type: "quote",
+    format: "png",
+    backgroundColor,
+    width: 512,
+    height: 768,
+    scale: 2,
+    messages: [
+      {
+        entities: [],
+        avatar: true,
+        from: {
+          id: 1,
+          name: m.pushName || m.sender,
+          photo: { url: pp },
         },
-      });
-let obj2 = {
-        "type": "quote",
-        "format": "png",
-        "backgroundColor": backgroundColor,
-        "width": 512,
-        "height": 768,
-        "scale": 2,
-        "messages": [{
-          "entities": [],
-          "avatar": true,
-          "from": {
-            "id": 1,
-            "name": m.name,
-            "photo": { "url": pp }
-          },
-          "text": teks2 || text,
-          "replyMessage": {}
-        }]
-      };
-    try {
-   const result = await axios.post('https://quote.btch.bz/generate', obj2, {
-      headers: {
-         'Content-Type': 'application/json'
+        text: messageText,
+        replyMessage: {},
+      },
+    ],
+  };
+
+  try {
+    // Generate the quote image
+    const response = await axios.post(
+      "https://quote.btch.bz/generate",
+      quotePayload,
+      {
+        headers: { "Content-Type": "application/json" },
       }
-   })
-   const Bbuffer = Buffer.from(result.data.result.image, 'base64')
-   let Sstiker = await sticker(Bbuffer, false, global.packname, global.author)
-    if (Sstiker) return conn.sendFile(m.chat, Sstiker, 'Quotly.webp', '', m)
+    );
+    const imageBuffer = Buffer.from(response.data.result.image, "base64");
+
+    // Convert to sticker
+    const s = await sticker(imageBuffer, false, global.packname, global.author);
+    if (s) {
+      return conn.sendFile(m.chat, s, "quote.webp", "", m);
+    }
   } catch (error) {
-    console.log(error);
-    throw '*Tidak Dapat Mengambil Informasi Url*\n${error}';
+    console.error(error);
+    throw `❌ Failed to generate sticker:\n${error.message}`;
   }
-}
+};
 
-handler.help = ['qcs']
-handler.tags = ['sticker']
-handler.command = /^(qcs|quoteds|quotlys)$/i
+handler.help = ["qcs <color>,<text>"];
+handler.tags = ["sticker"];
+handler.command = /^(qcs|quoteds|quotlys)$/i;
+handler.limit = true;
 
-handler.limit = true
-
-module.exports = handler
+module.exports = handler;

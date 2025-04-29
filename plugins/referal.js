@@ -1,65 +1,102 @@
-const crypto = require('crypto')
+const crypto = require("crypto");
 
-const xp_first_time = 2500
-const xp_link_creator = 15000
-const xp_bonus = {
-    5: 40000,
-   10: 100000,
-   20: 250000,
-   50: 1000000,
+const XP_FIRST_TIME = 2500;
+const XP_LINK_CREATOR = 15000;
+const XP_BONUS = {
+  5: 40000,
+  10: 100000,
+  20: 250000,
+  50: 1000000,
   100: 10000000,
-}
+};
 
 let handler = async (m, { conn, usedPrefix, text }) => {
-  let users = global.db.data.users
+  const users = global.db.data.users;
+
+  // If the user provided a referral code
   if (text) {
-    if ('ref_count' in users[m.sender]) throw 'Tidak bisa menggunakan kode referal!'
-    let link_creator = (Object.entries(users).find(([, { ref_code }]) => ref_code === text.trim()) || [])[0]
-    if (!link_creator) throw 'Kode referal tidak valid'
-    let count = users[link_creator].ref_count++
-    let extra = xp_bonus[count] || 0
-    users[link_creator].exp += xp_link_creator + extra
-    users[m.sender].exp += xp_first_time
-    users[m.sender].ref_count = 0
-    m.reply(`
-Selamat!
-+${xp_first_time} XP
-`.trim())
-    m.reply(`
-Seseorang telah menggunakan kode referal kamu
-+${xp_link_creator + extra} XP
-`.trim(), link_creator)
+    // Prevent re-using a referral
+    if ("ref_count" in users[m.sender]) {
+      throw "❌ You cannot use a referral code!";
+    }
+
+    // Find who created that code
+    const creatorJid = Object.entries(users).find(
+      ([, u]) => u.ref_code === text.trim()
+    )?.[0];
+
+    if (!creatorJid) {
+      throw "❌ Invalid referral code.";
+    }
+
+    // Increment the creator's count and calculate bonus
+    const countBefore = users[creatorJid].ref_count++;
+    const bonusXp = XP_BONUS[countBefore] || 0;
+
+    // Award XP
+    users[creatorJid].exp += XP_LINK_CREATOR + bonusXp;
+    users[m.sender].exp += XP_FIRST_TIME;
+    users[m.sender].ref_count = 0; // mark that this user has used a referral
+
+    // Notify the referred user
+    await m.reply(
+      `🎉 Congratulations!\n\nYou earned +${XP_FIRST_TIME} XP for using a referral code.`
+    );
+
+    // Notify the code creator
+    await m.reply(
+      `📢 Someone used your referral code!\n\nYou earned +${
+        XP_LINK_CREATOR + bonusXp
+      } XP.`,
+      creatorJid
+    );
+
+    // If no code was provided, generate or show the user's own code
   } else {
-    let code = users[m.sender].ref_code = users[m.sender].ref_code || new Array(11).fill().map(() => [...'0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'][crypto.randomInt(62)]).join('')
-    users[m.sender].ref_count = users[m.sender].ref_count ? users[m.sender].ref_count : 0
-    let command_text = `${usedPrefix}ref ${code}`
-    let command_link = `wa.me/${conn.user.jid.split('@')[0]}?text=${encodeURIComponent(command_text)}`
-    let share_text = `
-Dapatkan ${xp_first_time} XP untuk yang menggunakan link/kode referal dibawah ini
+    // Generate a code if not already present
+    const me = users[m.sender];
+    me.ref_code =
+      me.ref_code ||
+      Array.from(
+        { length: 11 },
+        () =>
+          "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"[
+            crypto.randomInt(62)
+          ]
+      ).join("");
+    me.ref_count = me.ref_count || 0;
 
-Referal Code: *${code}*
+    const code = me.ref_code;
+    const commandText = `${usedPrefix}ref ${code}`;
+    const commandLink = `https://wa.me/${
+      conn.user.jid.split("@")[0]
+    }?text=${encodeURIComponent(commandText)}`;
+    const shareText =
+      `Get ${XP_FIRST_TIME} XP when someone uses your referral code!\n\n` +
+      `Referral Code: *${code}*\n\n` +
+      `${commandLink}`;
 
-${command_link}
-`.trim()
-    m.reply(`
-Dapatkan ${xp_link_creator} XP untuk setiap pengguna baru yang menggunakan kode referal kamu
-${users[m.sender].ref_count} orang telah menggunakan kode referal kamu
-
-Kode referal kamu: ${code}
-
-Bagikan link kepada teman: ${command_link}
-
-atau kirim pesan kepada teman wa.me/?text=${encodeURIComponent(share_text)}
-
-${Object.entries(xp_bonus).map(([count, xp]) => `${count} Orang = Bonus ${xp} XP`).join('\n')}
-`.trim())
+    // Show referral details
+    await m.reply(
+      `🔗 *Referral Program*\n\n` +
+        `Earn +${XP_LINK_CREATOR} XP for each new user who uses your code.\n` +
+        `${me.ref_count} user(s) have already used your code.\n\n` +
+        `Your referral code: *${code}*\n\n` +
+        `Share this link with friends:\n${commandLink}\n\n` +
+        `Or send them this message:\nwa.me/?text=${encodeURIComponent(
+          shareText
+        )}\n\n` +
+        `*Bonus XP*: \n` +
+        Object.entries(XP_BONUS)
+          .map(([num, xp]) => `${num} users = +${xp} XP`)
+          .join("\n")
+    );
   }
-}
-handler.help = ['ref']
-handler.tags = ['fun']
+};
 
-handler.command = ['ref']
+handler.help = ["ref"];
+handler.tags = ["fun"];
+handler.command = ["ref"];
+handler.register = true;
 
-handler.register = true
-
-module.exports = handler
+module.exports = handler;

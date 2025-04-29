@@ -1,11 +1,20 @@
-let qrcode = require("qrcode")
+const qrcode = require("qrcode");
+
 let handler = async (m, { conn, text, usedPrefix }) => {
-  if (!text) throw `_Masukkan Teks!_\n\nContoh:\n${usedPrefix}qr Aku sayang kamu`
-  conn.sendFile(m.chat, await qrcode.toDataURL(text.slice(0, 2048), { scale: 8 }), 'qrcode.png', '¯\\_(ツ)_/¯', m)
-}
-handler.help = ['qrcode <teks>']
-handler.tags = ['maker']
-handler.command = /^qr(code)?$/i
+  if (!text) {
+    return m.reply(
+      `❗ Please provide text to encode.\n\nExample:\n${usedPrefix}qr I love you`
+    );
+  }
+  // Generate a QR code data URL (limit to 2048 chars)
+  const dataUrl = await qrcode.toDataURL(text.slice(0, 2048), { scale: 8 });
+  // Send as an image file
+  await conn.sendFile(m.chat, dataUrl, "qrcode.png", "Here’s your QR code!", m);
+};
 
-module.exports = handler
+handler.help = ["qrcode <text>"];
+handler.tags = ["maker"];
+handler.command = /^qr(code)?$/i;
+handler.limit = true;
 
+module.exports = handler;

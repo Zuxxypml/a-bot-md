@@ -1,10 +1,11 @@
 let handler = async (m, { usedPrefix }) => {
-    let role = global.db.data.users[m.sender].role
-    m.reply(`
-Role kamu adalah = *${role}*
-${conn.readmore}Ketik *${usedPrefix}levelup* untuk memperbarui Role
+  let role = global.db.data.users[m.sender].role;
+  m.reply(
+    `
+Your role is = *${role}*
+${conn.readmore}Type *${usedPrefix}levelup* to update your Role
 
-*List Role*
+*Role List*
 
 level  10 = Beginner
 level  20 = Average III
@@ -16,12 +17,10 @@ level  70 = Loud I
 level  80 = Flawless
 level  90 = Paragon
     `.trim()
+  );
+};
+handler.help = ["role"];
+handler.tags = ["xp"];
+handler.command = /^role$/i;
 
-    )
-}
-handler.help = ['role']
-handler.tags = ['xp']
-handler.command = /^role$/i
-
-
-module.exports = handler
+module.exports = handler;

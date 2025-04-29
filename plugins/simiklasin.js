@@ -1,19 +1,45 @@
 let handler = async (m, { conn }) => {
-    if (global.db.data.users[m.sender].pasangan == "") return conn.reply(m.chat, `Kamu sedang tidak menembak siapapun!`, m)
-    if (global.db.data.users[global.db.data.users[m.sender].pasangan].pasangan == m.sender) return conn.reply(m.chat, `Kamu telah berpacaran dengan @${global.db.data.users[m.sender].pasangan.split('@')[0]}`, m, {contextInfo: {
-      mentionedJid: [global.db.data.users[m.sender].pasangan]
-    }})
-    conn.reply(m.chat, `Kamu sudah mengikhlaskan @${global.db.data.users[m.sender].pasangan.split('@')[0]} karena dia tidak memberikan jawaban diterima atau ditolak`, m, {contextInfo: {
-      mentionedJid: [global.db.data.users[m.sender].pasangan]
-    }})
-    global.db.data.users[m.sender].pasangan = ""
+  const userData = global.db.data.users[m.sender];
+  const partnerJid = userData.pasangan;
+
+  // If the user hasn't confessed to anyone
+  if (!partnerJid) {
+    return conn.reply(m.chat, "You haven't confessed to anyone!", m);
   }
-  handler.help = ['simikhlas']
-  handler.tags = ['fun']
-  handler.command = /^(simikhlas)$/i
-  handler.mods = false
-  handler.premium = false
-  handler.group = true
-  handler.fail = null
-  handler.register = true
-  module.exports = handler
+
+  const partnerData = global.db.data.users[partnerJid];
+
+  // If the partner reciprocated
+  if (partnerData.pasangan === m.sender) {
+    return conn.reply(
+      m.chat,
+      `You are now dating @${partnerJid.split("@")[0]}`,
+      m,
+      { contextInfo: { mentionedJid: [partnerJid] } }
+    );
+  }
+
+  // Otherwise, let go of the unreciprocated confession
+  conn.reply(
+    m.chat,
+    `You have let go of @${
+      partnerJid.split("@")[0]
+    } because they didn't respond (accept or reject).`,
+    m,
+    { contextInfo: { mentionedJid: [partnerJid] } }
+  );
+
+  // Clear the confession record
+  userData.pasangan = "";
+};
+
+handler.help = ["letgo"];
+handler.tags = ["fun"];
+handler.command = /^(simikhlas|letgo)$/i;
+handler.mods = false;
+handler.premium = false;
+handler.group = true;
+handler.fail = null;
+handler.register = true;
+
+module.exports = handler;

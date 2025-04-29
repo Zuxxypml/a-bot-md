@@ -1,63 +1,64 @@
 let handler = async (m, { conn }) => {
-  conn.reply(m.chat, `“${conn.pickRandom(global.spill)}”`, m)
-}
-handler.help = ['spill']
-handler.tags = ['fun']
-handler.command = /^spill$/i
-handler.owner = false
-handler.mods = false
-handler.premium = false
-handler.group = true
-handler.private = false
+  conn.reply(m.chat, `“${conn.pickRandom(global.spill)}”`, m);
+};
+handler.help = ["spill"];
+handler.tags = ["fun"];
+handler.command = /^spill$/i;
+handler.owner = false;
+handler.mods = false;
+handler.premium = false;
+handler.group = true;
+handler.private = false;
 
-handler.admin = false
-handler.botAdmin = false
+handler.admin = false;
+handler.botAdmin = false;
 
-handler.fail = null
+handler.fail = null;
 
-module.exports = handler
+module.exports = handler;
+
 global.spill = [
-  "Spill stiker favorit",
-  "spill salah satu nama panggilan dari sahabat",
-  "spill orang yang paling polos?",
-  "BAGAIMANA PERASAANMU KETIKA KAMU NGECHAT DIREAD DOANG",
-  "pernah nge stuck di 1 orang ga?",
-  "spill yang paling pinter",
-  "spill kang ghosting",
-  "Spill yang kamu doakan di sepertiga malammu",
-  "spill yang sering jadi korban fakboy",
-  "Spill orang yang bikin kamu terkesima setiap saat",
-  "spill yg paling baby face",
-  "Spill temen yg fake friend (tag lahhh)",
-  "Spill moodbooster lu. Tag akunnya!",
-  "Spill orang yang lo kode kode tapi nggak peka peka",
-  "spill yg kaya monyet",
-  "spill orang paling dongo",
-  "Spill mantan terlama",
-  "Spill pernah gak sukak sama teman sendiri",
-  "spill yang sering berantem/ribut sama cp",
-  "Spill yang suka halu",
-  "spill yg sering lupa balas chat",
-  "Spill siapa yang rusuh",
-  "Spill kata kasar yg sering dipake",
-  "Spill lagu yang pernah bikin nangis",
-  "spill orang yg pengen lo santet",
-  "spill yang bikin lu susah move on",
-  "spill tugas yang pernah ga dikerjain",
-  "Spill keinginan lo di tahun depan",
-  "Spill ditikung or menikung?",
-  "Spill nama bapak",
-  "Spill orang yang tidak kamu sukai",
-  "SPILL OR DRINK (RL):",
-  "Spill barang yang di kasih doi",
-  "Spill lagu indo fav",
-  "spill temen lu yang cabe !",
-  "Spill temen yang suka buat dosa",
-  "Spill org yg paling lu gak bisa lupain",
-  "Spill guru tergalak pas sd",
-  "Spill yg pernah jadi ttm lu",
-  "Spill yg sering nyuekin km",
-  "Spill sifat cowo/cewe yg lu gasuka",
-  "spill yg sering nangis gegara cowo",
-  "Diduain atau ngeduain?"
-]
+  "Spill your favorite sticker",
+  "Spill one of your friends' nicknames",
+  "Spill the most innocent person you know",
+  "How do you feel when your message is read but not replied?",
+  "Have you ever been stuck on one person?",
+  "Spill the smartest person",
+  "Spill who ghosted you",
+  "Spill who you pray for in the last third of the night",
+  "Spill who is often a victim of fake lovers",
+  "Spill the person who amazes you every time",
+  "Spill who looks the youngest",
+  "Spill a fake friend (tag them!)",
+  "Spill what boosts your mood (tag the account!)",
+  "Spill the person you keep dropping hints to but they don't notice",
+  "Spill who acts like a monkey",
+  "Spill the most clueless person",
+  "Spill your longest ex-relationship",
+  "Spill if you've ever disliked a friend",
+  "Spill who often fights with their partner",
+  "Spill who frequently daydreams",
+  "Spill who often forgets to reply to chats",
+  "Spill who causes drama",
+  "Spill the curse words you use most often",
+  "Spill a song that once made you cry",
+  "Spill the person you wish you could hex",
+  "Spill what makes it hard for you to move on",
+  "Spill a task you never completed",
+  "Spill your wishes for next year",
+  "Spill: were you ever cheated on or did you cheat?",
+  "Spill your father's name",
+  "Spill someone you don't like",
+  "SPILL OR DRINK (Real Life):",
+  "Spill something your partner gave you",
+  "Spill your favorite Indonesian song",
+  "Spill your hottest friend!",
+  "Spill a friend who likes to do wrong",
+  "Spill the person you can't forget",
+  "Spill the strictest teacher you had in elementary school",
+  "Spill someone you've had a secret crush on",
+  "Spill who often ignores you",
+  "Spill character traits in men or women you dislike",
+  "Spill who often cries because of their partner",
+  "Were you cheated on or did you cheat?",
+];

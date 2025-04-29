@@ -1,76 +1,61 @@
-/*
-let fetch = require('node-fetch')
-let handler = async (m, { text }) => {
-  if (!text) throw 'Ketikkan chat'
-  let teks = text.replace(/[^A-Za-z]/g, '')
-  let res = await fetch(global.API('https://api.simsimi.net', '/v2/', { text: encodeURIComponent(teks), lc: "id" }, ''))
-  if (!res.ok) throw eror
-  let json = await res.json()
-  if (json.success == 'gapaham banh:v') return m.reply('lu ngetik apaaan sih')
-  await m.reply(`${json.success}`)
+const fetch = require("node-fetch");
+const { URLSearchParams } = require("url");
 
-}
-handler.help = ['simi <chat>']
-handler.tags = ['fun']
-handler.command = /^((sim)?simi|simih)$/i
-
-module.exports = handler
-*/
-// Jangan Hapus Wm Bang 
-// *Ai simi  Plugins Esm*
-// Ai Nya Toxic Anjir 
-// *[Sumber]*
-// https://whatsapp.com/channel/0029Vb3u2awADTOCXVsvia28
-// *[Sumber Scrape]*
-// https://whatsapp.com/channel/0029VaDMn8D3mFYDKDGIFW2J/516
-
-const fetch = require('node-fetch');
-const { URLSearchParams } = require('url');
-
-async function simSimi(text, languageCode = 'id') {
-  const url = 'https://api.simsimi.vn/v1/simtalk';
+/**
+ * Ask SimSimi for a reply.
+ * @param {string} text The user’s message.
+ * @param {string} languageCode The language code (default 'id' for Indonesian).
+ * @returns {Promise<string>} The chatbot’s reply.
+ */
+async function simSimi(text, languageCode = "id") {
+  const url = "https://api.simsimi.vn/v1/simtalk";
   const headers = {
-    'Content-Type': 'application/x-www-form-urlencoded',
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+    "Content-Type": "application/x-www-form-urlencoded",
+    "User-Agent":
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " +
+      "AppleWebKit/537.36 (KHTML, like Gecko) " +
+      "Chrome/91.0.4472.124 Safari/537.36",
   };
 
   const data = new URLSearchParams();
-  data.append('text', text);
-  data.append('lc', languageCode);
+  data.append("text", text);
+  data.append("lc", languageCode);
 
   try {
     const response = await fetch(url, {
-      method: 'POST',
+      method: "POST",
       headers,
       body: data.toString(),
     });
+    const raw = await response.text();
 
-    const rawResponse = await response.text();
-    
     try {
-      const jsonResponse = JSON.parse(rawResponse);
-      return jsonResponse.message || 'Maaf, aku tidak mengerti.';
-    } catch (error) {
-      console.error('Respons bukan JSON:', rawResponse);
-      return 'Maaf, ada kesalahan dalam memproses jawaban.';
+      const json = JSON.parse(raw);
+      return json.message || "Sorry, I didn't understand that.";
+    } catch {
+      console.error("Non-JSON response:", raw);
+      return "Sorry, there was an error processing the response.";
     }
-  } catch (error) {
-    console.error('Error asking SimSimi:', error);
-    return 'Maaf, terjadi kesalahan saat menghubungi SimSimi.';
+  } catch (err) {
+    console.error("Error contacting SimSimi:", err);
+    return "Sorry, I could not reach SimSimi.";
   }
 }
 
-let handler = async (m, { text, args }) => {
-  if (!text) return m.reply('Ketikkan chat');
+let handler = async (m, { text }) => {
+  // Prompt the user if no message was provided
+  if (!text) {
+    return m.reply("❗ Please type a message for SimSimi to reply to.");
+  }
 
-  let language = 'id'; 
-  let response = await simSimi(text, language);
-  m.reply(response);
+  // You can change the language code to 'en' for English, etc.
+  const language = "id";
+  const reply = await simSimi(text, language);
+  m.reply(reply);
 };
 
-handler.help = ['simi <chat>']
-handler.tags = ['fun','ai']
-handler.command = /^((sim)?simi|simih)$/i
-
+handler.help = ["simi <message>"];
+handler.tags = ["fun", "ai"];
+handler.command = /^((sim)?simi|simih)$/i;
 
 module.exports = handler;

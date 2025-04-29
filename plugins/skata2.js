@@ -1,104 +1,107 @@
 global.skata = {};
-const { cKata, kata } = require('../lib/sambung-kata.js')
-const game = `╔══「 *Kata Bersambung* 」
-╟ Game Kata Bersambung adalah
-║  permainan yang dimana setiap
-║  pemainnya diharuskan membuat
-║  kata dari akhir kata yang
-║  berasal dari kata sebelumnya.
-╚═════`
-const rules = `╔══「 *PERATURAN* 」
-╟ Jawaban merupakan kata dasar
-║  yaitu tidak mengandung
-║  spasi dan imbuhan (me-, -an, dll).
-╟ Pemain yang bertahan akan
-║  menang dan mendapatkan
-║  500xp X jumlah pemain
-╟ .skata
-║  untuk memulai
-╚═════`
-const poin = 500
+const { cKata, kata } = require("../lib/sambung-kata.js");
 
-let handler = async (m, {
-  conn, text, isPrems, isROwner, usedPrefix, command
-}) => {
-  if (text.toLowerCase().includes('start')) {
-    if (!skata[m.chat]) return m.reply(`Harus Bikin skata[m.chat] Dulu Pak`)
-    if (Object.keys(skata[m.chat].jids).length < 2) return m.reply(`Kurang Banyak Pemain`)
-    skata[m.chat].start = true
+const gameInfo = `╔══「 *Word-Chain Game* 」
+╟ In this game, each player must
+╟ create a new word starting with
+╟ the last letters of the previous word.
+╚═════`;
+
+const rulesInfo = `╔══「 *RULES* 」
+╟ Answers must be base words:
+║  no spaces or affixes (me-, -an, etc.).
+╟ Last player standing wins
+║  and earns 500 XP × number of players.
+╟ Use ".skata" to join/start.
+╚═════`;
+
+const BONUS_XP = 500;
+
+let handler = async (m, { conn, text, usedPrefix }) => {
+  // Prepare a valid random starting word (3–7 letters)
+  let kataStr = (await kata()).data.kata;
+  let valid = (await cKata(kataStr)).status;
+  while (kataStr.length < 3 || kataStr.length > 7 || !valid) {
+    kataStr = (await kata()).data.kata;
+    valid = (await cKata(kataStr)).status;
+  }
+
+  // "start" command to begin the game
+  if (text.toLowerCase().includes("start")) {
+    if (!skata[m.chat]) {
+      return m.reply("You must set up the game first!");
+    }
+    const playerCount = Object.keys(skata[m.chat].jids).length;
+    if (playerCount < 2) {
+      return m.reply("Not enough players to start.");
+    }
+    // Initialize game state
+    skata[m.chat].start = true;
     skata[m.chat].now = 0;
-    skata[m.chat].length = Object.keys(skata[m.chat].jids).length
-    skata[m.chat].exp = Date.now() + require('ms')('20s')
-    let rndm = kata_str
-    m.reply(`Permainan Di Mulai Dari ${skata[m.chat].jids[Object.keys(skata[m.chat].jids)[0]]}, Susun Kata ${rndm}`)
-    return 0;
+    skata[m.chat].length = playerCount;
+    skata[m.chat].exp = Date.now() + require("ms")("20s");
+    const firstJid = Object.keys(skata[m.chat].jids)[0];
+    m.reply(
+      `Game starting with @${firstJid.split("@")[0]}!\n` +
+        `Build from: *${kataStr.toUpperCase()}*`,
+      { contextInfo: { mentionedJid: [firstJid] } }
+    );
+    return;
   }
-  let kata_str = (await kata()).data.kata;
-  let valid = (await cKata(kata_str)).status
-  while (kata_str.length < 3 || kata_str.length > 7 || !valid) {
-    kata_str = (await kata()).data.kata;
-  }
+
+  // If no game exists yet, create a new waiting room
   if (!skata[m.chat]) {
     skata[m.chat] = {
-      jids: {
-        [m.sender]: kata_str
-      },
-      start: false
-    }
+      jids: { [m.sender]: kataStr },
+      start: false,
+    };
+    m.reply("You have been added to the game queue.");
+    return;
+  }
+
+  // If the user is already in queue
+  if (skata[m.chat].jids[m.sender]) {
+    return m.reply("You are already in the game queue.");
+  }
+
+  // Otherwise, add the user with a fresh word
+  skata[m.chat].jids[m.sender] = kataStr;
+  m.reply("You have been added to the game queue.");
+};
+
+// Before-hook to handle each turn
+handler.before = async (m, { conn }) => {
+  const room = skata[m.chat];
+  if (!room || !room.start) return;
+
+  const playerJids = Object.keys(room.jids);
+  const currentIndex = room.now;
+  const currentJid = playerJids[currentIndex];
+  if (m.sender !== currentJid) return;
+
+  // Check if the message contains the required prefix
+  const expectedPrefix = room.jids[currentJid].toLowerCase();
+  if (m.text.toLowerCase().startsWith(expectedPrefix)) {
+    room.now++;
+    const nextJid = playerJids[room.now % playerJids.length];
+    m.reply(
+      `Correct! +${BONUS_XP} XP awarded.\n` +
+        `Next up: @${nextJid.split("@")[0]}`,
+      { contextInfo: { mentionedJid: [nextJid] } }
+    );
+    global.db.data.users[m.sender].exp += BONUS_XP;
   } else {
-    if (skata[m.chat].jids[m.sender]) m.reply(`Lu Dah Maen`)
-    skata[m.chat].jids[m.sender] = kata_str
+    room.now++;
+    const nextJid = playerJids[room.now % playerJids.length];
+    m.reply(`Wrong answer.\nNext up: @${nextJid.split("@")[0]}`, {
+      contextInfo: { mentionedJid: [nextJid] },
+    });
   }
-  m.reply("Kamu Di Masukan Dalam Permainan")
-  return 0;
-}
+};
 
-handler.before = async (m, {
-  conn
-}) => {
-  if (!skata[m.chat] || !skata[m.chat].start || Object.keys(skata[m.chat].jids).findIndex(tr => tr == m.sender) == skata[m.chat].now) return 0
-  let obj = Object.keys(skata[m.chat].jids)
-  if (m.chats.toLowerCase().includes(skata[m.chat][obj[now]].toLowerCase())) {
-    m.reply(`Anda Dapet Poin, Sekarang Player ${obj[skata[m.chat].now + 1]}`)
-  } else {
-    m.reply(`Salah, Sekarang Player ${obj[skata[m.chat].now + 1]}`)
-  }
-  skata[m.chat].now++
-}
+handler.help = ["sambungkata"];
+handler.tags = ["game"];
+handler.command = /^s(ambung)?kata(debug)?2$/i;
+handler.group = false;
 
-handler.help = ['sambungkata']
-handler.tags = ['game']
-handler.command = /^s(ambung)?kata(debug)?2$/i
-handler.group = 0
-module.exports = handler
-
-function randomize(str) {
-  let data = str.split('')
-  let total = []
-  while (data.length > total.length) {
-    let rndm = Math.floor(Math.random() * data.length)
-    if (!data[rndm]) continue;
-    total.push(data[rndm])
-    delete data[rndm]
-  }
-  return total.join('')
-}
-
-async function reply(msg, chat) {
-  return conn.sendMessage(msg.key.remoteJid,
-    chat,
-    'conversation',
-    {
-      quoted: msg
-    })
-}
-
-setInterval(() => {
-  let data = Object.entries(skata)
-  for (let a of data) {
-    if (a[1].exp < Date.now()) {
-      conn.sendMessage(a[0], `Permainan Di skata[m.chat] Ini Berakhir Blbalbla, a[1] Isi Object Yo Lu Isi Wkwkwk Dengan Pemain\n\n${Object.keys(a[1].jids).join('\n')}`, 'conversation',)
-      delete skata[a[0]]
-    }
-  }
-}, 100)
+module.exports = handler;

@@ -2,29 +2,38 @@ const handler = async (m, { conn }) => {
   const chatID = m.chat;
   const onlineMembers = [];
 
-  const members = await conn.groupMetadata(chatID);
-  for (const member of members.participants) {
-    console.log('Member:', member);
-    if (member.id && member.id && conn.user.jid && member.id.includes('@s.whatsapp.net')) {
-      onlineMembers.push(`│ ○ Name: ${conn.getName(member.id.split(`@`)[0] + `@s.whatsapp.net`)}\n│ wa.me/${member.id.split('@')[0]}`);
+  const metadata = await conn.groupMetadata(chatID);
+
+  for (const participant of metadata.participants) {
+    if (participant.id && participant.id.includes("@s.whatsapp.net")) {
+      // Get name using conn.getName
+      const name = await conn.getName(participant.id);
+      onlineMembers.push(
+        `│ ○ Name: ${name}\n│ wa.me/${participant.id.split("@")[0]}`
+      );
     }
   }
 
   if (onlineMembers.length > 0) {
-    const onlineList = onlineMembers.join('\n');
-    conn.reply(m.chat, `╭───「 *LIST•ONLINE* 」───⬣\n│ *Anak haram yang cuman nyimak* \n│\n${onlineList}\n╰──── •`, m, {
-    contextInfo: { mentionedJid: members.participants }
-  });
+    const list = onlineMembers.join("\n");
+    conn.reply(
+      chatID,
+      `╭───「 *ONLINE LIST* 」───⬣\n│ *Participants currently online or present:*\n│\n${list}\n╰──── •`,
+      m,
+      {
+        contextInfo: { mentionedJid: metadata.participants.map((p) => p.id) },
+      }
+    );
   } else {
-    m.reply('Tidak ada anggota yang sedang online.');
+    m.reply("No members are currently online.");
   }
 };
 
-handler.help = ['here', 'listonline']
-handler.tags = ['group']
-handler.command = /^(here|(list)?online)$/i
-handler.group = true
-handler.admin = true
-handler.limit = true
+handler.help = ["here", "listonline"];
+handler.tags = ["group"];
+handler.command = /^(here|(list)?online)$/i;
+handler.group = true;
+handler.admin = true;
+handler.limit = true;
 
-module.exports = handler
+module.exports = handler;

@@ -1,41 +1,64 @@
-const uploadImage = require('../lib/uploadImage')
-const { sticker } = require('../lib/sticker')
+const uploadImage = require("../lib/uploadImage");
+const { sticker } = require("../lib/sticker");
+const { webp2png } = require("../lib/webp2mp4");
+const fetch = require("node-fetch");
 
-let { webp2png } = require('../lib/webp2mp4')
-let fetch = require('node-fetch')
 let handler = async (m, { conn, command }) => {
-  let url
-  let anu = command.replace('ed', '')
-  if (m.mentionedJid[0]) {
-    let buffer = await (await fetch(await conn.profilePictureUrl(m.mentionedJid[0], 'image').catch(e => { throw `Orang yang kamu tag tidak ada PP atau PP nya sedang diprivasi` }))).buffer()
-    url = await uploadImage(buffer)
+  let url;
+  let effect = command.replace(/ed$/i, ""); // e.g. 'wasted' → 'wast', 'triggered' → 'trigger'
+
+  // If someone is tagged, use their profile picture
+  if (m.mentionedJid && m.mentionedJid[0]) {
+    let ppUrl;
+    try {
+      ppUrl = await conn.profilePictureUrl(m.mentionedJid[0], "image");
+    } catch (e) {
+      throw "The user you tagged has no profile picture or it is private.";
+    }
+    let res = await fetch(ppUrl);
+    let buffer = await res.buffer();
+    url = await uploadImage(buffer);
+
+    // Otherwise use the quoted or sent image/sticker
   } else {
-    let q = m.quoted ? m.quoted : m
-    let mime = (q.msg || q).mimetype || ''
-    if (!(mime || /image\/(jpe?g|png)|webp/.test(mime))) throw `Reply stiker/gambar`
-    let img = await q.download()
-    if (/webp/.test(mime)) url = await webp2png(img)
-    else url = await uploadImage(img)
+    let q = m.quoted || m;
+    let mime = (q.msg || q).mimetype || "";
+    if (!/image\/(jpe?g|png)|webp/.test(mime)) {
+      throw "Please send or reply to an image or sticker.";
+    }
+    let img = await q.download();
+    if (/webp/.test(mime)) {
+      url = await webp2png(img);
+    } else {
+      url = await uploadImage(img);
+    }
   }
-  m.reply('_Sedang proses mengirim..._')
-  let link = `https://some-random-api.ml/canvas/${anu}ed?avatar=${url}`
-  // if (wasted.status !== 200) throw e  'Server Error.. Harap lapor owner'
-  let stiker = await sticker(null, link, 'hm', global.author)
-  conn.sendFile(m.chat, stiker, 'sssss.webp', '', m)
-}
 
-handler.help = ['trigger', 'wasted'].map(v => v + ' (caption/reply)')
-handler.tags = ['stickerother']
-handler.command = /^(wasted|trigger(ed)?)$/i
-handler.owner = false
-handler.mods = false
-handler.premium = false
-handler.group = false
-handler.private = false
+  await m.reply("_Processing and sending..._");
+  let apiUrl = `https://some-random-api.ml/canvas/${effect}ed?avatar=${url}`;
+  let outputSticker = await sticker(
+    null,
+    apiUrl,
+    global.packname,
+    global.author
+  );
+  conn.sendFile(m.chat, outputSticker, `${effect}.webp`, "", m);
+};
 
-handler.admin = false
-handler.botAdmin = false
+handler.help = [
+  "trigger (caption|reply image)",
+  "wasted (caption|reply image)",
+];
+handler.tags = ["stickerother"];
+handler.command = /^(wasted|trigger(ed)?)$/i;
 
-handler.fail = null
+handler.owner = false;
+handler.mods = false;
+handler.premium = false;
+handler.group = false;
+handler.private = false;
+handler.admin = false;
+handler.botAdmin = false;
+handler.fail = null;
 
-module.exports = handler
+module.exports = handler;

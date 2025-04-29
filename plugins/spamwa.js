@@ -1,33 +1,45 @@
 let handler = async (m, { conn, text }) => {
-    let [nomor, pesan, jumlah] = text.split('|')
-    if (!nomor) throw '- Format: *#spamwa nomor|teks|jumlah*\n- Contoh: *.spamwa 5219999999999|Apa coba|50*'
-    if (!pesan) throw '- Format: *#spamwa nomor|teks|jumlah*\n- Contoh: *.spamwa 5219999999999|Apa coba|50*'
-    if (jumlah && isNaN(jumlah)) throw '- Format: *.spamwa nomor|teks|jumlah*\n- Contoh: *.spamwa 5219999999999|Apa coba|50*'
+  // Parse the input: number|message|count
+  let [rawNumber, message, count] = text.split("|");
+  const usage =
+    "Usage: #spamwa number|message|count\n" +
+    "Example: #spamwa 5219999999999|Hello there|50";
 
-    let fixedNumber = nomor.replace(/[-+<>@]/g, '').replace(/ +/g, '').replace(/^[0]/g, '62') + '@s.whatsapp.net'
-    let fixedJumlah = jumlah ? jumlah * 1 : 10
-    if (fixedJumlah > 50) throw '*Maks 50 Pesan*'
+  // Validate inputs
+  if (!rawNumber) throw usage;
+  if (!message) throw usage;
+  if (count && isNaN(count)) throw usage;
 
-    await m.reply(`*Spam Success To That Number*\nEstimated Sent All *${fixedJumlah}*`)
+  // Clean up and format the WhatsApp JID
+  let targetJid =
+    rawNumber
+      .replace(/[-+<>@]/g, "")
+      .replace(/\s+/g, "")
+      .replace(/^0/, "62") + "@s.whatsapp.net";
 
-    for (let i = 0; i < fixedJumlah; i++) {
-        let teks = `${pesan.trim()}\n\n[${i + 1}/${fixedJumlah}]`; // Tambahkan informasi iterasi dalam pesan
-        await conn.relayMessage(fixedNumber, {
-            text: teks,
-            extendedTextMessage: {
-                text: teks,
-            },
-        }, {})
-    }
-}
+  // Default to 10 messages if count not provided
+  let total = count ? parseInt(count) : 10;
+  if (total > 50) throw "*Maximum 50 messages allowed.*";
 
-handler.help = ['spamwa <number>|<mesage>|<no of messages>']
-handler.tags = ['tools','premium']
-handler.command = /^spam(wa)$/i
+  // Inform the user
+  await m.reply(
+    `✅ Spam will be sent to ${rawNumber}\n` + `Total messages: *${total}*`
+  );
 
-handler.group = false
-handler.premium = true
-handler.private = true
-handler.limit = true
+  // Send the spam messages
+  for (let i = 0; i < total; i++) {
+    const numberedText = `${message.trim()}\n\n[${i + 1}/${total}]`;
+    await conn.relayMessage(targetJid, { text: numberedText }, {});
+  }
+};
 
-module.exports = handler
+handler.help = ["spamwa <number>|<message>|<count>"];
+handler.tags = ["tools", "premium"];
+handler.command = /^spamwa$/i;
+
+handler.group = false;
+handler.premium = true;
+handler.private = true;
+handler.limit = true;
+
+module.exports = handler;

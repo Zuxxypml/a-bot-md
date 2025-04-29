@@ -1,32 +1,79 @@
 let handler = async (m, { conn, usedPrefix }) => {
-    let users = global.db.data.users[m.sender]
-    let chats = global.db.data.chats[m.chat]
-    const rows = [
-        { title: `Bot Chat Status (${chats.isBanned ? 'Mati' : 'Aktif'})`, description: "Aktifkan atau matikan bot pada chat ini\nOpsi: Chat", rowId: ".bot" },
-        { title: `Auto Level Up (${users.autolevelup ? 'Aktif' : 'Mati'})`, description: "Otomatis level up ketika exp mencukupi\nOpsi: Individu", rowId: ".set levelup" },
-        { title: `Auto Stiker (${users.stiker ? 'Aktif' : 'Mati'})`, description: "Otomatis menjadikan stiker setiap gambar yang dikirim\nOpsi: Chat", rowId: ".set stiker" },
-        { title: `Document (${users.useDocument ? 'Aktif' : 'Mati'})`, description: "File yang dikirim dari fitur download akan dijadikan document\nOpsi: Individu", rowId: ".set document" },
-        { title: `Group Game (${chats.game ? 'Aktif' : 'Mati'})`, description: "Ada kalanya mengobrol ada kalanya bermain\nOpsi: Group", rowId: ".set game" },
-        { title: `Group Welcome (${chats.welcome ? 'Aktif' : 'Mati'})`, description: "Menyambut member yang baru bergabung di group", rowId: ".set welcome" },
-        { title: `Group Antilink (${chats.antilink ? 'Aktif' : 'Mati'})`, description: "Mendeteksi link group", rowId: ".set antilink" },
-        { title: `Group Detect (${chats.detect ? 'Aktif' : 'Mati'})`, description: "Mendeteksi setiap ada Admin Group yang baru/dilepas", rowId: ".set detect" },
-        { title: `Group Anti PesanSekaliLihat (${chats.viewonce ? 'Mati' : 'Aktif'})`, description: "Meneruskan pesan sekali lihat menjadi pesan biasa", rowId: ".set viewonce" },
-        { title: `Group Anti Delete (${chats.delete ? 'Mati' : 'Aktif'})`, description: "Mengembalikan pesan yang di hapus member", rowId: ".set antidelete" },
-    ]
-    if (!m.isGroup) rows.splice(4, 5)
-    const sections = [{ title: "Setting Bot", rows: rows }]
+  const users = global.db.data.users[m.sender];
+  const chats = global.db.data.chats[m.chat];
 
-    const button = {
-        buttonText: 'Klik disini',
-        text: "Silahkan pilih Opsi",
-        sections,
-    }
+  const rows = [
+    {
+      title: `Bot Chat Status (${chats.isBanned ? "Off" : "On"})`,
+      description: "Toggle the bot in this chat\nScope: Chat",
+      rowId: `${usedPrefix}bot`,
+    },
+    {
+      title: `Auto Level Up (${users.autolevelup ? "On" : "Off"})`,
+      description:
+        "Automatically level up when XP is sufficient\nScope: Private",
+      rowId: `${usedPrefix}set levelup`,
+    },
+    {
+      title: `Auto Sticker (${users.stiker ? "On" : "Off"})`,
+      description:
+        "Automatically convert received images to stickers\nScope: Chat",
+      rowId: `${usedPrefix}set stiker`,
+    },
+    {
+      title: `Send as Document (${users.useDocument ? "On" : "Off"})`,
+      description:
+        "Send downloaded files as documents instead of media\nScope: Private",
+      rowId: `${usedPrefix}set document`,
+    },
+    {
+      title: `Group Game Mode (${chats.game ? "On" : "Off"})`,
+      description: "Toggle between chat and game modes\nScope: Group",
+      rowId: `${usedPrefix}set game`,
+    },
+    {
+      title: `Welcome Messages (${chats.welcome ? "On" : "Off"})`,
+      description: "Greet new members when they join the group\nScope: Group",
+      rowId: `${usedPrefix}set welcome`,
+    },
+    {
+      title: `Anti-Link (${chats.antilink ? "On" : "Off"})`,
+      description: "Detect and remove group invite links\nScope: Group",
+      rowId: `${usedPrefix}set antilink`,
+    },
+    {
+      title: `Admin Change Detection (${chats.detect ? "On" : "Off"})`,
+      description: "Notify when group admin status changes\nScope: Group",
+      rowId: `${usedPrefix}set detect`,
+    },
+    {
+      title: `View-Once Bypass (${chats.viewonce ? "Off" : "On"})`,
+      description:
+        "Convert view-once messages into normal messages\nScope: Group",
+      rowId: `${usedPrefix}set viewonce`,
+    },
+    {
+      title: `Anti-Delete (${chats.delete ? "Off" : "On"})`,
+      description: "Restore messages deleted by members\nScope: Group",
+      rowId: `${usedPrefix}set antidelete`,
+    },
+  ];
 
-    await conn.sendMessage(m.chat, button, { quoted: m })
-}
+  // Remove group-specific settings if not in a group chat
+  if (!m.isGroup) rows.splice(4, 6);
 
-handler.tags = ['info', 'main']
-handler.help = ['setting']
-handler.command = /^setting$/i
+  const sections = [{ title: "Bot Settings", rows }];
+  const button = {
+    buttonText: "Open Settings",
+    text: "Please choose an option:",
+    sections,
+  };
 
-module.exports = handler
+  await conn.sendMessage(m.chat, button, { quoted: m });
+};
+
+handler.tags = ["info", "main"];
+handler.help = ["setting"];
+handler.command = /^setting$/i;
+
+module.exports = handler;

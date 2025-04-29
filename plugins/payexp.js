@@ -1,34 +1,58 @@
-let pajak = 0.02
+let taxRate = 0.02;
+
 let handler = async (m, { conn, text, usedPrefix, command }) => {
-  let fail = `_Fitur ini untuk berbagi XP ke user lain_\n\ncontoh:\n${usedPrefix + command} @6287857180075 10\natau reply chat user lain dengan perintah: ${usedPrefix + command} 10`
-  let users = global.db.data.users
-  let who
-  if (m.isGroup) who = m.mentionedJid[0] ? m.mentionedJid[0] : m.quoted ? m.quoted.sender : false
-  else who = m.chat
-  if (!who) return conn.reply(m.chat, fail, m)
-  if (!who in users) {
-    users[who] = {
-      exp: 0
-    }
+  let failMessage = `_This feature lets you share your XP with another user._\n\nExample:\n${
+    usedPrefix + command
+  } @6287857180075 10\nor reply to a user's message and type: ${
+    usedPrefix + command
+  } 10`;
+
+  let users = global.db.data.users;
+  let recipient;
+
+  // Get the recipient user based on group context
+  if (m.isGroup) {
+    recipient = m.mentionedJid[0]
+      ? m.mentionedJid[0]
+      : m.quoted
+      ? m.quoted.sender
+      : false;
+  } else {
+    recipient = m.chat;
   }
-  let txt = text.replace('@' + who.split`@`[0], '').trim()
-  if (!txt) return conn.reply(m.chat, fail, m)
-  if (isNaN(txt)) throw 'Hanya angka'
-  let xp = parseInt(txt)
-  let exp = xp
-  let pjk = Math.ceil(xp * pajak)
-  exp += pjk
-  if (exp < 1) throw 'Minimal 1'
-  if (exp > users[m.sender].exp) throw '_Exp tidak mencukupi untuk mentransfer_'
-  users[m.sender].exp -= exp
-  users[owner[0] + '@s.whatsapp.net'].exp += pjk
-  users[who].exp += xp
 
-  m.reply(`(${-xp} XP) + (${-pjk} XP (Pajak 2%)) = ( ${-exp} XP)`)
-  conn.fakeReply(m.chat, `+${xp} XP`, who, m.text)
-}
-handler.help = ['payexp @user <jumlah>']
-handler.tags = ['xp']
-handler.command = /^payexp$/
+  if (!recipient) return conn.reply(m.chat, failMessage, m);
 
-module.exports = handler
+  if (!(recipient in users)) {
+    users[recipient] = { exp: 0 };
+  }
+
+  let amountText = text.replace("@" + recipient.split("@")[0], "").trim();
+  if (!amountText) return conn.reply(m.chat, failMessage, m);
+  if (isNaN(amountText)) throw "Only numbers are allowed.";
+
+  let xp = parseInt(amountText);
+  let tax = Math.ceil(xp * taxRate);
+  let totalCost = xp + tax;
+
+  if (totalCost < 1) throw "Minimum transfer is 1 XP.";
+  if (totalCost > users[m.sender].exp)
+    throw "_You don’t have enough XP to transfer._";
+
+  // Process the transfer
+  users[m.sender].exp -= totalCost;
+  users[owner[0] + "@s.whatsapp.net"].exp += tax;
+  users[recipient].exp += xp;
+
+  // Notify sender and recipient
+  m.reply(
+    `You transferred ${xp} XP (+${tax} XP tax) = *${totalCost} XP total*.`
+  );
+  conn.fakeReply(m.chat, `You received +${xp} XP 🎉`, recipient, m.text);
+};
+
+handler.help = ["payexp @user <amount>"];
+handler.tags = ["xp"];
+handler.command = /^payexp$/i;
+
+module.exports = handler;

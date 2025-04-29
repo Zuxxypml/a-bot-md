@@ -1,14 +1,25 @@
-let handler = async (m, { conn, args, usedPrefix }) => {
-  let res = await conn.groupRevokeInvite(m.chat)
-  m.reply('_Link Group Berhasil Direset_\n\nSilahkan buka PC Bot')
-  conn.reply(m.sender, `https://chat.whatsapp.com/${res.code}`, m)
-}
-handler.help = ['revoke (reset link group)']
-handler.tags = ['admin']
-handler.command = /^re(voke|new)(invite|link)?$/i
-handler.group = true
+let handler = async (m, { conn, usedPrefix }) => {
+  // Revoke the current group invite link
+  const res = await conn.groupRevokeInvite(m.chat);
 
-handler.admin = true
-handler.botAdmin = true
+  // Notify in the group that the link has been reset
+  await conn.reply(
+    m.chat,
+    "✅ Group invite link has been reset.\n\nPlease open your WhatsApp on PC and join again.",
+    m
+  );
 
-module.exports = handler
+  // Send the new invite link privately to the command sender
+  const newLink = `https://chat.whatsapp.com/${res.code}`;
+  await conn.reply(m.sender, `🔗 New Invite Link:\n${newLink}`, m);
+};
+
+handler.help = ["revoke (reset group invite link)"];
+handler.tags = ["admin"];
+handler.command = /^re(voke|new)(invite|link)?$/i;
+
+handler.group = true;
+handler.admin = true; // User must be an admin
+handler.botAdmin = true; // Bot must be an admin
+
+module.exports = handler;

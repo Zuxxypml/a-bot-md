@@ -1,153 +1,177 @@
 /*
-Yang ngilangin Credits, gw sumpahin bisulan 20 turunan
+⚠️ WARNING:
+Do not remove the credits.
+You’ll be cursed with 20 generations of boils if you do 😈
 
-ubah tr.deployers.repl.co menjadi https://0e87ad76-6c4e-40ff-bb5a-6bbdab145ae2-00-39qk1kw7vab6l.worf.replit.dev
+URL Updated:
+Old: tr.deployers.repl.co
+New: https://0e87ad76-6c4e-40ff-bb5a-6bbdab145ae2-00-39qk1kw7vab6l.worf.replit.dev
 */
 
 const fetch = require("node-fetch");
 
 let handler = async (m, { conn, args, usedPrefix, command }) => {
-    const pengirim = m.sender.split(`@`)[0];
-    if (["cariobat", "obat", "sakit", "penyakit"].includes(command)) {
-        if (!args[0])
-            return conn.reply(
-                m.chat,
-                `Masukkan nama obat yang ingin dicari!\nEx: ${usedPrefix + command
-                } demam`,
-                m,
-            );
+  const sender = m.sender.split("@")[0];
 
-        try {
-            const obatName = args.join(" ");
-            const response = await fetch(
-                `https://0e87ad76-6c4e-40ff-bb5a-6bbdab145ae2-00-39qk1kw7vab6l.worf.replit.dev/cariobat?obat=${encodeURIComponent(
-                    obatName,
-                )}`,
-            );
+  // Handle medicine search
+  if (["cariobat", "obat", "sakit", "penyakit"].includes(command)) {
+    if (!args[0])
+      return conn.reply(
+        m.chat,
+        `Please enter the name of the medicine you want to search for.\nExample: ${
+          usedPrefix + command
+        } demam`,
+        m
+      );
 
-            if (response.ok) {
-                await conn.reply(
-                    m.chat,
-                    "Tunggu sebentar, sedang mencari keterangan obat...",
-                    m,
-                );
-            } else {
-                conn.reply(m.chat, response.status + response.statusText, m);
-            }
+    try {
+      const medicineName = args.join(" ");
+      const response = await fetch(
+        `https://0e87ad76-6c4e-40ff-bb5a-6bbdab145ae2-00-39qk1kw7vab6l.worf.replit.dev/cariobat?obat=${encodeURIComponent(
+          medicineName
+        )}`
+      );
 
-            const data = await response.json();
-
-            if (data && Array.isArray(data)) {
-                const result = data
-                    .map(
-                        (item) =>
-                            `*Obat:* ${item.alt}\n\n*Harga:* ${item.harga}\n\n*Sumber:* ${item.sumber}\n\n*Gambar Obat:* ${item.fallback_url}\n\n\n_*NOTE: Created By Xnuvers007 server*_`,
-                    )
-                    .join("\n\n");
-                conn.reply(m.chat, result, m);
-            } else {
-                conn.reply(m.chat, "Tidak ada data obat yang ditemukan.", m);
-            }
-        } catch (error) {
-            console.error("Error fetching obat data:", error);
-            conn.reply(m.chat, "Maaf, terjadi kesalahan saat mencari data obat.", m);
-        }
-        await conn.reply(m.chat, "Created By Xnuvers007 server", m);
-    } else if (
-        [
-            "keteranganobat",
-            "penjelasanobat",
-            "ktobat",
-            "indikasiobat",
-            "komposisiobat",
-            "dosisobat",
-            "ketobat"
-        ].includes(command)
-    ) {
-        if (!args[0])
-            return conn.reply(
-                m.chat,
-                `Masukkan link obat yang tadi sudah dicari di cari obat (letakkan link sumber)\n ex: ${usedPrefix + command
-                } https://www.halodoc.com/obat-dan-vitamin/rebamipide-100-mg-10-tablet`,
-                m,
-            );
-        const linkSumber = args[0];
-        const response = await fetch(
-            `https://0e87ad76-6c4e-40ff-bb5a-6bbdab145ae2-00-39qk1kw7vab6l.worf.replit.dev/keterangan?obat=${encodeURIComponent(
-                linkSumber,
-            )}`,
+      if (response.ok) {
+        await conn.reply(
+          m.chat,
+          "Searching for medicine info, please wait...",
+          m
         );
-        if (response.ok) {
-            await conn.reply(
-                m.chat,
-                "Tunggu sebentar, sedang mencari keterangan obat...",
-                m,
-            );
-        } else {
-            conn.reply(m.chat, response.status + response.statusText, m);
-        }
-        const keteranganData = await response.json();
+      } else {
+        return conn.reply(
+          m.chat,
+          `${response.status} ${response.statusText}`,
+          m
+        );
+      }
 
-        if (keteranganData) {
-            const keteranganResult = `*Aturan Pakai:* ${keteranganData["Aturan Pakai"]}\n\n*Deskripsi:* ${keteranganData.Deskripsi}\n\n*Dosis:* ${keteranganData.Dosis}\n\n*Efek Samping:* ${keteranganData["Efek Samping"]}\n\n*Golongan Produk:* ${keteranganData["Golongan Produk"]}\n\n*Indikasi Umum:* ${keteranganData["Indikasi Umum"]}\n\n*Kemasan:* ${keteranganData.Kemasan}\n\n*Komposisi:* ${keteranganData.Komposisi}\n\n*Kontra Indikasi:* ${keteranganData["Kontra Indikasi"]}\n\n*Manufaktur:* ${keteranganData.Manufaktur}\n\n*No. Registrasi:* ${keteranganData["No. Registrasi"]}\n\n*Perhatian:* ${keteranganData.Perhatian}\n\n\n_*NOTE: Created By Xnuvers007 server*_`;
-            conn.reply(m.chat, keteranganResult, m);
-        } else {
-            conn.reply(m.chat, "Tidak ada data keterangan obat yang ditemukan.", m);
-        }
-    } else if (
-        ["checkdata", "cekimel", "cekemail", "checkemail", "cekdata"].includes(
-            command,
-        )
-    ) {
-        if (!args[0]) {
-            m.reply(
-                `Please provide an email address.\nEx: ${usedPrefix + command} example@example.com`,
-            );
-            return;
-        }
+      const data = await response.json();
 
-        let email = args[0].toLowerCase();
-        let apiUrl = `https://0e87ad76-6c4e-40ff-bb5a-6bbdab145ae2-00-39qk1kw7vab6l.worf.replit.dev/checkdata?email=${encodeURIComponent(
-            email,
-        )}`;
+      if (data && Array.isArray(data)) {
+        const result = data
+          .map(
+            (item) =>
+              `*Name:* ${item.alt}\n*Price:* ${item.harga}\n*Source:* ${item.sumber}\n*Image:* ${item.fallback_url}\n\n_NOTE: Powered by Xnuvers007 server_`
+          )
+          .join("\n\n");
 
-        let res = await fetch(apiUrl);
-        if (res.status !== 200) {
-            m.reply("Error fetching data. Please try again later.");
-            return;
-        }
-
-        let json = await res.json();
-        let output = "";
-
-        if (json.Data && json.Data.results && json.Data.results.length > 0) {
-            output += `Data Leaks (KEBOCORAN DATA):\n`;
-
-            for (let result of json.Data.results) {
-                for (let data of result.data) {
-                    output += `Title: ${result.title}\n`;
-                    output += `Description: ${result.description}\n`;
-                    output += `Data Leaked: ${data["Data yang bocor"]}\n`;
-                    output += `Date of Incident: ${data["Tanggal Kejadian"]}\n`;
-                    output += `Total Data Leaked: ${data["Total keseluruhan data yang bocor"]}\n`;
-                    output += `Link: [${result.title}](${result.link})\n\n`;
-                }
-            }
-        } else {
-            output += `Your email is secure and not leaked in deep web/dark web.\n`;
-        }
-
-        m.reply(`\`\`\`${output}\`\`\``);
+        conn.reply(m.chat, result, m);
+      } else {
+        conn.reply(m.chat, "No medicine data found.", m);
+      }
+    } catch (error) {
+      console.error("Error fetching medicine data:", error);
+      conn.reply(
+        m.chat,
+        "Sorry, an error occurred while searching for the medicine data.",
+        m
+      );
     }
+    await conn.reply(m.chat, "Powered by Xnuvers007 server", m);
+
+    // Handle detailed medicine explanation
+  } else if (
+    [
+      "keteranganobat",
+      "penjelasanobat",
+      "ktobat",
+      "indikasiobat",
+      "komposisiobat",
+      "dosisobat",
+      "ketobat",
+    ].includes(command)
+  ) {
+    if (!args[0])
+      return conn.reply(
+        m.chat,
+        `Please paste the link from the previous medicine search (source link).\nExample: ${
+          usedPrefix + command
+        } https://www.halodoc.com/obat-dan-vitamin/rebamipide-100-mg-10-tablet`,
+        m
+      );
+
+    const sourceLink = args[0];
+    const response = await fetch(
+      `https://0e87ad76-6c4e-40ff-bb5a-6bbdab145ae2-00-39qk1kw7vab6l.worf.replit.dev/keterangan?obat=${encodeURIComponent(
+        sourceLink
+      )}`
+    );
+
+    if (response.ok) {
+      await conn.reply(
+        m.chat,
+        "Getting detailed information, please wait...",
+        m
+      );
+    } else {
+      return conn.reply(m.chat, `${response.status} ${response.statusText}`, m);
+    }
+
+    const info = await response.json();
+
+    if (info) {
+      const details = `*Usage:* ${info["Aturan Pakai"]}\n\n*Description:* ${info.Deskripsi}\n\n*Dosage:* ${info.Dosis}\n\n*Side Effects:* ${info["Efek Samping"]}\n\n*Product Category:* ${info["Golongan Produk"]}\n\n*Indications:* ${info["Indikasi Umum"]}\n\n*Packaging:* ${info.Kemasan}\n\n*Composition:* ${info.Komposisi}\n\n*Contraindications:* ${info["Kontra Indikasi"]}\n\n*Manufacturer:* ${info.Manufaktur}\n\n*Registration No.:* ${info["No. Registrasi"]}\n\n*Caution:* ${info.Perhatian}\n\n_NOTE: Powered by Xnuvers007 server_`;
+
+      conn.reply(m.chat, details, m);
+    } else {
+      conn.reply(m.chat, "No explanation data found for this medicine.", m);
+    }
+
+    // Handle email leak check
+  } else if (
+    ["checkdata", "cekimel", "cekemail", "checkemail", "cekdata"].includes(
+      command
+    )
+  ) {
+    if (!args[0]) {
+      return m.reply(
+        `Please provide an email address.\nExample: ${
+          usedPrefix + command
+        } example@email.com`
+      );
+    }
+
+    const email = args[0].toLowerCase();
+    const apiUrl = `https://0e87ad76-6c4e-40ff-bb5a-6bbdab145ae2-00-39qk1kw7vab6l.worf.replit.dev/checkdata?email=${encodeURIComponent(
+      email
+    )}`;
+
+    const res = await fetch(apiUrl);
+    if (res.status !== 200) {
+      return m.reply("Error fetching data. Please try again later.");
+    }
+
+    const json = await res.json();
+    let output = "";
+
+    if (json.Data?.results?.length > 0) {
+      output += `Data Breaches Detected:\n\n`;
+
+      for (const result of json.Data.results) {
+        for (const data of result.data) {
+          output += `*Title:* ${result.title}\n`;
+          output += `*Description:* ${result.description}\n`;
+          output += `*Leaked Data:* ${data["Data yang bocor"]}\n`;
+          output += `*Date:* ${data["Tanggal Kejadian"]}\n`;
+          output += `*Total Leaked:* ${data["Total keseluruhan data yang bocor"]}\n`;
+          output += `*Link:* ${result.link}\n\n`;
+        }
+      }
+    } else {
+      output += `✅ Your email is secure. No data found on dark web leaks.\n`;
+    }
+
+    m.reply("```" + output + "```");
+  }
 };
 
 handler.help = [
-    "cariobat <Nama Obat>",
-    "penjelasanobat <SumberLinkDariCariObat>",
-    "cekemail <Email>",
+  "cariobat <Medicine Name>",
+  "penjelasanobat <Link from cariobat>",
+  "cekemail <Email>",
 ];
-handler.tags = ["tools", "tools", "internet"];
-handler.command =
-    /^(cariobat|penjelasanobat|cekemail)$/i;
+handler.tags = ["tools", "health", "security"];
+handler.command = /^(cariobat|penjelasanobat|cekemail)$/i;
 
 module.exports = handler;

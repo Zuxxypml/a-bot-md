@@ -1,44 +1,61 @@
 let handler = async (m, { conn, usedPrefix: _p }) => {
-
   let capt = `
 ===================
-Kode Aktivasi Group
+Group Activation Codes
 ===================
-1. Silver [gratis]\nBot aktif trial selama 3 hari https://wa.me/${conn.user.jid.split('@')[0]}?text=.claim+kode
+1. Silver [Free]
+   Trial active for 3 days:
+   https://wa.me/${conn.user.jid.split("@")[0]}?text=.claim+code
+
 2. Gold
-Harga:\n- Pengguna baru: Rp. 8000\n- Perpanjang: Rp. 6000\nMasa aktif: 30 Hari
+   Price:
+   - New users: ₦5,000
+   - Renewal:   ₦5,000
+   Validity: 30 Days
+
 3. Diamond
-Harga:\n- Pengguna baru: Rp. 11000\n- Perpanjang: Rp. 8000\nMasa aktif: 60 Hari
+   Price:
+   - New users: ₦8,000
+   - Renewal:   ₦8,000
+   Validity: 60 Days
 
-Fitur Bot Untuk Group:
-• Hidetag, mentionAll member
-• Welcome, Bye, antidelete [on/off]
-• Group [open/close]
-• Fitur game [on/off]
-  
+Bot Features for Groups:
+• Hidetag / mention all members
+• Welcome, Bye, Anti-delete [on/off]
+• Group open/close
+• Game features [on/off]
+
 ===================
-MEMBER PREMIUM 
+PREMIUM MEMBER
 ===================
-[30 Hari] *Harga:*
-- Pengguna baru: Rp. 15.000
-- Perpanjang: Rp. 8.000
+[30 Days] Prices:
+- New users: ₦10,000
+- Renewal:   ₦10,000
 
-Apa yang kamu dapatkan jika premium?
-• Fitur Limit tanpa batas
-• Klaim lebih banyak XP Harian
-• Dapatkan hingga 5 kode redeem group
-• Fitur JadiBot
-• Dan masih banyak lagi`.trim()
+What you get as Premium?
+• Unlimited usage limits
+• Higher daily XP claims
+• Up to 5 group redeem codes
+• “Become Bot” feature
+• And much more!
+`.trim();
 
-  let msg = await m.reply(capt)
+  let msg = await m.reply(capt);
   setTimeout(() => {
-    conn.reply(m.chat, `Bagaimana? sudah menentukan pilihan kamu?? kalau udah yuk gass joinn\n${_p}owner\n${_p}payment`, msg)
+    conn.reply(
+      m.chat,
+      `Have you decided which option to choose?\n\n` +
+        `Feel free to contact the owner:\n` +
+        `${_p}owner\n\n` +
+        `Or view payment details:\n` +
+        `${_p}payment`,
+      msg
+    );
+  }, 50000);
+};
 
+handler.help = ["sewabot", "premium"];
+handler.tags = ["main", "group"];
+handler.command = /^(sewa(bot)?|premium)$/i;
 
-  }, 50000)
-}
-handler.help = ['sewabot', 'premium']
-handler.tags = ['main', 'group']
-handler.command = /^(sewa(bot)?|premium)$/i
-
-module.exports = handler
+module.exports = handler;

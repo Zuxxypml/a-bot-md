@@ -1,19 +1,20 @@
 let handler = async (m, { text }) => {
-  if (!text) text = m.text
-  m.reply(text)
-}
-handler.help = ['say <teks>']
-handler.tags = ['fun']
-handler.command = /^(say|katakan)$/i
-handler.owner = false
-handler.mods = false
-handler.premium = false
-handler.group = false
-handler.private = false
+  if (!text) text = m.text;
+  m.reply(text);
+};
 
-handler.admin = false
-handler.botAdmin = false
+handler.help = ["say <text>"];
+handler.tags = ["fun"];
+handler.command = /^(say)$/i;
 
-handler.fail = null
+handler.owner = false;
+handler.mods = false;
+handler.premium = false;
+handler.group = false;
+handler.private = false;
+handler.admin = false;
+handler.botAdmin = false;
 
-module.exports = handler
+handler.fail = null;
+
+module.exports = handler;

@@ -1,167 +1,250 @@
-const skata = require('../lib/sambung-kata')
-let handler = m => m
+const skata = require("../lib/sambung-kata");
+const fs = require("fs");
+const timeoutMs = 60000; // 60 seconds per turn
+const bonusXp = 500;
+
+let handler = (m) => m;
 
 handler.before = async function (m) {
-	this.skata = this.skata ? this.skata : {}
-	let id = m.chat
-	if (!(id in this.skata)) return !0
-	let room = this.skata[id]
-	let users = db.data.users
-	let _kata = await genKata()
-	let member = room.player
-	let bonus = rwd(500, 600)
-	let lose_skata
-	let win_skata
-	function mmr(apa = '', jid = '') {
+  this.skata = this.skata || {};
+  const chatId = m.chat;
+  if (!(chatId in this.skata)) return true;
 
-		let user = db.data.users[jid]
-		if (apa == 'win') {
-			if (user.skata > 5000) win_skata = rwd(5, 9)
-			else if (user.skata > 3000) win_skata = rwd(5, 10)
-			else if (user.skata > 1500) win_skata = rwd(10, 15)
-			else if (user.skata > 1000) win_skata = rwd(15, 20)
-			else if (user.skata > 500) win_skata = rwd(20, 30)
-			else win_skata = rwd(30, 50)
-		} else {
-			if (user.skata > 8000) lose_skata = rwd(35, 50)
-			else if (user.skata > 5000) lose_skata = rwd(25, 30)
-			else if (user.skata > 3000) lose_skata = rwd(20, 25)
-			else if (user.skata > 1500) lose_skata = rwd(15, 19)
-			else if (user.skata > 1000) lose_skata = rwd(10, 14)
-			else if (user.skata > 500) lose_skata = rwd(5, 9)
-			else lose_skata = rwd(1, 5)
-		}
-		if (apa == 'win') return win_skata
-		else return lose_skata
-	}
-	let who
-	if (room.new) {
-		if (!/nextkata/i.test(m.text)) return !0
-		room.new = false
-		room.killer = false
-		room.kata = _kata
-		room.chat = await this.reply(m.chat, `Saatnya @${room.curr.split(`@`)[0]}\nMulai : *${(_kata).toUpperCase()}*\n*${room.filter(_kata).toUpperCase()}... ?*\n*Reply untuk menjawab!*\n"nyerah" untuk menyerah\nXP terkumpul: ${room.win_point}\nTersisa: \n${this.readmore + room.player.map((v, i) => i + 1 + '. ' + users[v].name).join('\n')}`, 0)
-	}
-	if (room.diam) {
-		if (!/nextkata/i.test(m.text)) return !0
-		room.diam = false
-		room.waktu = setTimeout(() => {
-			lose_skata = mmr('lose', room.curr)
-			win_skata = (room.killer ? mmr('win', room.killer) : null)
-			this.reply(m.chat, `Waktu jawab habis\n@${room.curr.split`@`[0]} tereliminasi -${lose_skata} MMR${room.killer ? `\n@${room.killer.split`@`[0]} +${win_skata} MMR` : ''}`, room.chat).then(_ => {
-				room.eliminated.push(room.curr)
-				if (room.killer) {
+  const room = this.skata[chatId];
+  const users = global.db.data.users;
+  const nextWord = await genKata();
+  const players = room.player;
+  let loseRating, winRating;
 
-					users[room.killer].skata += win_skata
-					users[room.curr].skata -= lose_skata
-				}
-				let index = member.indexOf(room.curr)
-				member.splice(index, 1)
-				if (index == member.length) room.curr = member[0]
-				else room.curr = member[index]
-				if (member.length == 1 && room.status == 'play') {
-					this.reply(m.chat, `@${member[0].split`@`[0]} Berhasil bertahan\n+${room.win_point}XP`, room.chat).then(_ => {
-						users[member[0]].exp += room.win_point
-						delete this.skata[id]
-						return !0
-					})
+  function calcRating(type = "lose", jid = "") {
+    const user = users[jid];
+    let value;
+    if (type === "win") {
+      if (user.skata > 5000) value = rwd(5, 9);
+      else if (user.skata > 3000) value = rwd(5, 10);
+      else if (user.skata > 1500) value = rwd(10, 15);
+      else if (user.skata > 1000) value = rwd(15, 20);
+      else if (user.skata > 500) value = rwd(20, 30);
+      else value = rwd(30, 50);
+    } else {
+      if (user.skata > 8000) value = rwd(35, 50);
+      else if (user.skata > 5000) value = rwd(25, 30);
+      else if (user.skata > 3000) value = rwd(20, 25);
+      else if (user.skata > 1500) value = rwd(15, 19);
+      else if (user.skata > 1000) value = rwd(10, 14);
+      else if (user.skata > 500) value = rwd(5, 9);
+      else value = rwd(1, 5);
+    }
+    return value;
+  }
 
+  // New round setup
+  if (room.new) {
+    if (!/nextkata/i.test(m.text)) return true;
+    room.new = false;
+    room.killer = null;
+    room.kata = nextWord;
+    room.chat = await this.reply(
+      m.chat,
+      `It's @${room.curr.split("@")[0]}'s turn\n` +
+        `Start with: *${nextWord.toUpperCase()}*\n` +
+        `Words must begin with: *${room
+          .filter(nextWord)
+          .toUpperCase()}... ?*\n` +
+        `Reply to answer, or type "nyerah" to give up.\n` +
+        `XP collected: ${room.win_point}\n` +
+        `Remaining players:\n${
+          this.readmore +
+          players.map((jid, i) => `${i + 1}. ${users[jid].name}`).join("\n")
+        }`,
+      0
+    );
+  }
 
-				} else {
-					room.diam = true
-					room.new = true
-					who = room.curr
-					conn.preSudo('nextkata', who, m).then(async _ => {
-						this.ev.emit('messages.upsert', _)
-					})
-				}
-			})
-		}, 30000)
-	}
+  // Time-up elimination
+  if (room.diam) {
+    if (!/nextkata/i.test(m.text)) return true;
+    room.diam = false;
+    room.waktu = setTimeout(() => {
+      loseRating = calcRating("lose", room.curr);
+      winRating = room.killer ? calcRating("win", room.killer) : null;
+      this.reply(
+        m.chat,
+        `⏰ Time's up!\n` +
+          `@${room.curr.split("@")[0]} eliminated -${loseRating} MMR` +
+          (room.killer
+            ? `\n@${room.killer.split("@")[0]} +${winRating} MMR`
+            : ""),
+        room.chat
+      ).then(() => {
+        room.eliminated.push(room.curr);
+        if (room.killer) {
+          users[room.killer].skata += winRating;
+          users[room.curr].skata -= loseRating;
+        }
+        const idx = players.indexOf(room.curr);
+        players.splice(idx, 1);
+        room.curr = idx >= players.length ? players[0] : players[idx];
 
-	if (room.curr == m.sender) {
-		if (/nyerah/i.test(m.text)) {
-			lose_skata = mmr('lose', room.curr)
-			win_skata = (room.killer ? mmr('win', room.killer) : null)
-			clearTimeout(room.waktu)
-			this.reply(m.chat, `@${room.curr.split`@`[0]} tereliminasi -${lose_skata} MMR${room.killer ? `\n@${room.killer.split`@`[0]} +${win_skata} MMR` : ''}`, room.chat)
-			room.eliminated.push(room.curr)
-			if (room.killer) {
-				users[room.killer].skata += win_skata
-				users[room.curr].skata -= lose_skata
-			}
-			let index = member.indexOf(room.curr)
-			member.splice(index, 1)
-			if (index == (member.length)) room.curr = member[0]
-			else room.curr = member[index]
-			if (member.length == 1 && room.status == 'play') {
-				await this.reply(m.chat, `@${member[0].split`@`[0]} Berhasil bertahan\n+${room.win_point}XP`, room.chat, { contextInfo: { mentionedJid: member } })
-				users[member[0]].skata += win_skata
-				users[member[0]].exp += room.win_point
-				delete this.skata[id]
-				return !0
-			}
-			room.new = true
-			room.diam = true
-			who = room.curr
-			let msg = await conn.preSudo('nextkata', who, m)
-			this.ev.emit('messages.upsert', msg)
-		}
-		if (!m.quoted || !m.quoted.fromMe || !m.quoted.isBaileys || !/(Mulai|Tersisa) ?:/i.test(m.quoted.text)) return !0
-		if (m.quoted.id == room.chat.id) {
-			let answerF = (m.text.toLowerCase().split` `[0]).trim().replace(/[^a-z]/gi, '')
-			let checkF = await skata.cKata(m.text.toLowerCase().split` `[0])
-			if (!answerF.startsWith(room.filter(room.kata))) {
-				return m.reply(`👎🏻 *Salah!*\nJawaban harus dimulai dari kata *${room.filter(room.kata)}*`)
-			} else if (!checkF.status) {
-				return m.reply(`👎🏻 *Salah!*\nKata *${m.text.toUpperCase()}* tidak valid!`)
-			} else if ((room.filter(room.kata)) == answerF) {
-				return m.reply(`👎🏻 *Salah!*\nJawabanmu sama dengan soal, silahkan cari kata lain!`)
-			} else if (room.basi.includes(answerF)) {
-				return m.reply(`👎🏻 *Salah!*\nKata *${m.text.toUpperCase()}* sudah pernah digunakan!`)
-			}
-			clearTimeout(room.waktu)
-			room.killer = room.curr
-			users[m.sender].exp += bonus
-			let waktunya = member.indexOf(room.curr)
-			room.curr = member[waktunya + 1]
-			if (waktunya + 1 >= member.length) room.curr = member[0]
-			room.basi.push(answerF)
-			room.win_point += 200
-			room.chat = await this.reply(m.chat, `👍+${bonus}XP\nGiliran @${room.curr.split`@`[0]}\n*${room.filter(answerF).toUpperCase()}... ?*\n*Reply untuk menjawab!*\n"nyerah" untuk menyerah\nXP terkumpul: ${room.win_point}\nTersisa: \n${this.readmore + room.player.map((v, i) => i + 1 + '. ' + users[v].name).join('\n')}`, m)
-			room.diam = true
-			room.kata = answerF
-			who = room.curr
-			let msg = await conn.preSudo('nextkata', who, m)
-			this.ev.emit('messages.upsert', msg)
-			return !0
-		}
-	} else if (room.curr !== m.sender) {
-		if (!m.quoted || !m.quoted.fromMe || !m.quoted.isBaileys || !/(Mulai|Tersisa) ?:/i.test(m.quoted.text)) return !0
-		if (m.quoted.id == room.chat.id) {
-			if (room.eliminated.includes(m.sender)) m.reply(`_Hei, kamu sudah tereliminasi, tunggu hingga game ini selesai_\n*Nice Try, next game*`)
-			else if (room.player.includes(m.sender)) {
-				m.reply(`_Bukan giliranmu.._`)
-			} else m.reply(`_*Kamu tidak dapat menjawab soal itu*_\nKarena kamu tidak bergabung dalam game ini\n\nTunggu hingga game ini berakhir, kemudian ikutlah bermain!`)
-		} else m.reply(`Soal itu sudah lewat`)
-	}
-	return !0
-}
-module.exports = handler
+        if (players.length === 1 && room.status === "play") {
+          this.reply(
+            m.chat,
+            `🏆 @${players[0].split("@")[0]} survived!\n+${room.win_point} XP`,
+            room.chat
+          ).then(() => {
+            users[players[0]].exp += room.win_point;
+            delete this.skata[chatId];
+          });
+        } else {
+          room.diam = true;
+          room.new = true;
+          const nextUser = room.curr;
+          conn.preSudo("nextkata", nextUser, m).then((_) => {
+            this.ev.emit("messages.upsert", _);
+          });
+        }
+      });
+    }, timeoutMs);
+  }
 
+  // Current player's response
+  if (room.curr === m.sender) {
+    // Give up
+    if (/nyerah/i.test(m.text)) {
+      clearTimeout(room.waktu);
+      loseRating = calcRating("lose", room.curr);
+      winRating = room.killer ? calcRating("win", room.killer) : null;
+      this.reply(
+        m.chat,
+        `😞 @${room.curr.split("@")[0]} gave up -${loseRating} MMR` +
+          (room.killer
+            ? `\n😀 @${room.killer.split("@")[0]} +${winRating} MMR`
+            : ""),
+        room.chat
+      );
+      room.eliminated.push(room.curr);
+      if (room.killer) {
+        users[room.killer].skata += winRating;
+        users[room.curr].skata -= loseRating;
+      }
+      const idx = players.indexOf(room.curr);
+      players.splice(idx, 1);
+      room.curr = idx >= players.length ? players[0] : players[idx];
+
+      if (players.length === 1 && room.status === "play") {
+        await this.reply(
+          m.chat,
+          `🏆 @${players[0].split("@")[0]} survived!\n+${room.win_point} XP`,
+          room.chat,
+          { contextInfo: { mentionedJid: players } }
+        );
+        users[players[0]].exp += room.win_point;
+        delete this.skata[chatId];
+        return true;
+      }
+
+      room.new = true;
+      room.diam = true;
+      const nextUser = room.curr;
+      const msg = await conn.preSudo("nextkata", nextUser, m);
+      this.ev.emit("messages.upsert", msg);
+    }
+
+    // Answer handling
+    if (
+      !m.quoted ||
+      !m.quoted.fromMe ||
+      !m.quoted.isBaileys ||
+      !/(Mulai|Tersisa) ?:/i.test(m.quoted.text)
+    )
+      return true;
+    if (m.quoted.id === room.chat.id) {
+      const answer = m.text
+        .toLowerCase()
+        .split(" ")[0]
+        .replace(/[^a-z]/gi, "");
+      const valid = await skata.cKata(answer);
+
+      if (!answer.startsWith(room.filter(room.kata))) {
+        return m.reply(
+          `👎 Incorrect!\nYour word must start with *${room.filter(room.kata)}*`
+        );
+      } else if (!valid.status) {
+        return m.reply(`👎 Invalid word: *${answer.toUpperCase()}*`);
+      } else if (room.filter(room.kata) === answer) {
+        return m.reply(`👎 Can't repeat the same word as the prompt!`);
+      } else if (room.basi.includes(answer)) {
+        return m.reply(`👎 Already used word: *${answer.toUpperCase()}*`);
+      }
+
+      clearTimeout(room.waktu);
+      room.killer = m.sender;
+      users[m.sender].exp += bonusXp;
+      const idx = players.indexOf(room.curr);
+      room.curr = idx + 1 >= players.length ? players[0] : players[idx + 1];
+      room.basi.push(answer);
+      room.win_point += 200;
+
+      room.chat = await this.reply(
+        m.chat,
+        `👍 +${bonusXp} XP\n` +
+          `It's @${room.curr.split("@")[0]}'s turn\n` +
+          `Next start: *${room.filter(answer).toUpperCase()}... ?*\n` +
+          `Reply to answer, or type "nyerah" to give up.\n` +
+          `XP collected: ${room.win_point}\n` +
+          `Remaining:\n${
+            this.readmore +
+            players.map((jid, i) => `${i + 1}. ${users[jid].name}`).join("\n")
+          }`,
+        m
+      );
+
+      room.diam = true;
+      room.kata = answer;
+      const nextUser = room.curr;
+      const msg = await conn.preSudo("nextkata", nextUser, m);
+      this.ev.emit("messages.upsert", msg);
+      return true;
+    }
+  } else {
+    // Other players trying to answer
+    if (
+      !m.quoted ||
+      !m.quoted.fromMe ||
+      !m.quoted.isBaileys ||
+      !/(Mulai|Tersisa) ?:/i.test(m.quoted.text)
+    )
+      return true;
+    if (room.quoted.id === room.chat.id) {
+      if (room.eliminated.includes(m.sender)) {
+        m.reply(`_You are eliminated. Wait until the game finishes._`);
+      } else if (players.includes(m.sender)) {
+        m.reply(`_It's not your turn!_`);
+      } else {
+        m.reply(`_You are not in this game. Wait for the next round!_`);
+      }
+    } else m.reply(`_That question has passed!_`);
+  }
+
+  return true;
+};
+
+module.exports = handler;
+
+// Helper: generate a word of length ≥ 3
 async function genKata() {
-	let json = await skata.kata()
-	let result = json.kata
-	while (result.length < 3) {
-		json = await skata.kata()
-		result = json.kata
-	}
-	return result
+  let data = await skata.kata();
+  let word = data.kata;
+  while (word.length < 3) {
+    data = await skata.kata();
+    word = data.kata;
+  }
+  return word;
 }
 
-
+// Helper: random integer between min and max
 function rwd(min, max) {
-	min = Math.ceil(min)
-	max = Math.floor(max)
-	return Math.floor(Math.random() * (max - min + 1)) + min
+  min = Math.ceil(min);
+  max = Math.floor(max);
+  return Math.floor(Math.random() * (max - min + 1)) + min;
 }

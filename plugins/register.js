@@ -1,33 +1,62 @@
-const { createHash } = require('crypto')
-let Reg = /(.*)([.|])([0-9]*)$/i
+const REGEX = /(.*)[.|]([0-9]*)$/i;
+
 let handler = async function (m, { conn, text, usedPrefix }) {
-  let user = global.db.data.users[m.sender]
-  if (user.registered === true) return conn.reply(m.chat, '_Kamu sudah terdaftar_' + `\n\nketik ${usedPrefix}daftarulang`, m)
-  if (!Reg.test(text)) throw `Format salah!\nContoh: *${usedPrefix}daftar Regi|18*`
-  let [_, name, splitter, age] = text.match(Reg)
-  let totalreg = Object.keys(global.db.data.users).length
-  if (!name) throw 'Nama tidak boleh kosong!'
-  if (!age) throw 'Umur tidak boleh kosong!'
-  if (name.length > 40) throw `Nama terlalu panjang`
-  if (parseInt(age) > 40) throw `Mbah mbah tidak boleh main bot`
-  if (parseInt(age) < 9) throw `Bocil dilarang main HP!!`
-  user.name = name
-  user.age = parseInt(age)
-  user.regTime = + new Date
-  user.registered = true
-  await conn.sendFile(m.chat, './src/vn/arigatou.opus', 'suara.opus', null, m, true)
-  m.reply(`
-Daftar berhasil!
-╔═「 Info 」
-┣⊱ Nama: ${name}
-┣⊱ Umur: ${age}thn
-╚══════════
-`.trim())
-}
-handler.help = ['daftar', 'register'].map(v => v + ' <nama|umur>')
-handler.tags = ['main']
+  let user = global.db.data.users[m.sender];
 
-handler.command = /^(daftar|reg(ister)?)$/i
+  // Check if already registered
+  if (user.registered) {
+    return conn.reply(
+      m.chat,
+      `You are already registered.\n\nType ${usedPrefix}daftarulang to re-register.`,
+      m
+    );
+  }
 
-module.exports = handler
+  // Validate format: name|age
+  if (!REGEX.test(text)) {
+    throw `Invalid format!\nExample: *${usedPrefix}daftar John|18*`;
+  }
 
+  // Extract name and age
+  let [, name, age] = text.match(REGEX);
+  if (!name) throw "Name cannot be empty!";
+  if (!age) throw "Age cannot be empty!";
+  if (name.length > 40) throw "Name is too long!";
+  if (parseInt(age) > 40)
+    throw "You must be 40 years old or younger to register.";
+  if (parseInt(age) < 9)
+    throw "You must be at least 9 years old to use this bot!";
+
+  // Register the user
+  user.name = name.trim();
+  user.age = parseInt(age);
+  user.regTime = Date.now();
+  user.registered = true;
+
+  // Send welcome voice note
+  await conn.sendFile(
+    m.chat,
+    "./src/vn/arigatou.opus",
+    "welcome.opus",
+    null,
+    m,
+    true
+  );
+
+  // Confirmation message
+  m.reply(
+    `
+✅ Registration successful!
+╔═「 Profile Info 」
+┣⊱ Name: ${user.name}
+┣⊱ Age: ${user.age} years
+╚════════════════
+`.trim()
+  );
+};
+
+handler.help = ["daftar <name|age>", "register <name|age>"];
+handler.tags = ["main"];
+handler.command = /^(daftar|register)$/i;
+
+module.exports = handler;

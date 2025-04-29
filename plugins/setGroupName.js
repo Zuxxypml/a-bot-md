@@ -1,17 +1,22 @@
-let handler = async (m, { conn, text }) => {
-    if (!text) throw `Masukan Nama Baru Untuk Group`
-    try {
-        await conn.groupUpdateSubject(m.chat, text)
-        conn.reply(m.chat, 'Sukses Mengganti Nama Group', m)
-    } catch (e) {
-        console.log(e)
-        throw `Error`
-    }
-}
-handler.help = ['setsubject']
-handler.tags = ['owner']
-handler.command = /^((set)?(judul|subje(ct|k)))$/i
-handler.admin = true
-handler.botAdmin = 1
+let handler = async (m, { conn, text, usedPrefix }) => {
+  // Ensure a new group subject is provided
+  if (!text) {
+    throw `❗ Please provide a new group name.\n\nUsage: ${usedPrefix}setsubject <new name>`;
+  }
+  try {
+    // Update the group subject
+    await conn.groupUpdateSubject(m.chat, text);
+    await conn.reply(m.chat, "✅ Group name updated successfully!", m);
+  } catch (e) {
+    console.error(e);
+    throw "❌ Failed to update group name.";
+  }
+};
 
-module.exports = handler
+handler.help = ["setsubject <new subject>"];
+handler.tags = ["owner"];
+handler.command = /^((set)?(judul|subje(ct|k)))$/i;
+handler.admin = true; // User must be group admin
+handler.botAdmin = true; // Bot must be group admin
+
+module.exports = handler;

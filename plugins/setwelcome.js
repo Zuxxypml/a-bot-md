@@ -1,13 +1,28 @@
-let handler = async (m, { conn, text, isROwner, isOwner }) => {
-  if (text) {
-    global.db.data.chats[m.chat].sWelcome = text
-    m.reply('Welcome berhasil diatur\n@user (Mention)\n@subject (Judul Grup)\n@desc (Deskripsi Grup)')
-  } else throw '_Masukkan teks!_\n\nMasukan kata kunci berikut ini\nBot akan mengikuti *nama user, group & isi deskripsi secara otomatis*\n\n@user (Mention/teks)\n@subject (Judul Grup)\n@desc (Deskripsi Grup)'
-}
-handler.help = ['setwelcome <teks>']
-handler.tags = ['owner', 'group']
+let handler = async (m, { conn, text }) => {
+  // Ensure the user provided a welcome message
+  if (!text) {
+    throw (
+      `❗ Please provide a welcome message!\n\n` +
+      `You can use these placeholders:\n` +
+      `@user    = mentions the new user\n` +
+      `@subject = the group name\n` +
+      `@desc    = the group description`
+    );
+  }
+  // Save the welcome template for this chat
+  global.db.data.chats[m.chat].sWelcome = text;
+  // Acknowledge success
+  m.reply(
+    `✅ Welcome message set successfully!\n\n` +
+      `Placeholders you can use:\n` +
+      `@user    = mention the new user\n` +
+      `@subject = group name\n` +
+      `@desc    = group description`
+  );
+};
 
-handler.command = /^setwelcome$/i
-module.exports = handler
+handler.help = ["setwelcome <message>"];
+handler.tags = ["owner", "group"];
+handler.command = /^setwelcome$/i;
 
-
+module.exports = handler;

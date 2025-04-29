@@ -1,26 +1,51 @@
 let handler = async (m, { conn, command, text }) => {
-  conn.reply(m.chat, `
-*_🎐Menurut Ramalan Bot.._*
+  conn.reply(
+    m.chat,
+    `
+*_🎐 According to the Bot's Fortune Telling.._*
 
-Masa Depan ${pickRandom(['Anda akan menjadi orang yang Kaya, keluarga yang harmonis, memiliki 2 memiliki anak, memiliki 4 memiliki kendaraan, memiliki 2 rumah','Anda akan menjadi orang yang Sederhana, keluarga yang harmonis, memiliki 3 memiliki anak, memiliki 1 memiliki kendaraan, memiliki 1 rumah','Anda akan menjadi orang yang Miskin, keluarga yang Sederhana, memiliki 1 anak, tidak memiliki kendaraan, rumah ngontrak','Anda akan menjadi orang yang Sederhana, keluarga yang dicerai, memiliki 5 anak, memiliki 2 kendaraan, memiliki 2 rumah','Anda akan menjadi orang yang Sederhana, keluarga yang Sederhana, memiliki 2 anak, memiliki 2 kendaraan, memiliki 1 rumah','Anda akan menjadi orang yang Miskin, keluarga yang dicerai memiliki 2 anak, memiliki 1 kendaraan, memiliki 1 rumah','Anda akan menjadi orang yang Kaya, keluarga yang Sederhana, memiliki 1 anak, memiliki 1 kendaraan, memiliki 2 rumah','Anda akan menjadi orang yang Sederhana, keluarga yang Harmonis, memiliki 1 anak, memiliki 3 kendaraan, memiliki 1 rumah','Anda akan menjadi orang yang Miskin, tidak memiliki keluarga (jomblo), tidak memiliki anak, tidak memiliki kendaraan, tidak memiliki rumah','Anda akan menjadi orang yang Sederhana, keluarga yang Sederhana, memiliki 4 anak, memiliki 1 kendaraan, memiliki 2 rumah','Anda akan menjadi orang yang Sederhana, keluarga yang kacau, tidak memiliki anak (Gugur), memiliki 2 kendaraan, memiliki 1 rumah','Anda akan menjadi orang yang Sangat Kaya, keluarga yang Sangat Harmonis, memiliki 5 anak, memiliki 7 kendaraan, memiliki 9 rumah','Anda akan menjadi orang yang Sangat Miskin, keluarga yang Sederhana, memiliki 9 anak, tidak memiliki kendaraan, rumah ngontrak','Anda akan menjadi orang yang Kaya, keluarga yang Pelit, memiliki 2 anak, memiliki 2 kendaraan, memiliki 2 rumah','Anda akan menjadi orang yang Sederhana, keluarga yang Pelit, memiliki 1 anak, memiliki 1 kendaraan, memiliki 1 rumah','Anda akan menjadi orang yang Sederhana, keluarga yang dicerai, memiliki 2 anak, memiliki 1 kendaraan, rumah ngontrak','Anda akan menjadi orang yang Sangat Sederhana, keluarga yang Sakinah, memiliki 1 anak, memiliki 1 kendaraan, memiliki 1 rumah','Anda akan menjadi orang yang Sederhana, keluarga yang Sangat Sederhana, memiliki 11 anak, memiliki 1 kendaraan, memiliki 1 rumah','Anda akan menjadi orang yang Sederhana, keluarga yang Sangat Sederhana, memiliki 2 anak kembar, memiliki 3 kendaraan, memiliki 2 rumah','Anda akan menjadi orang yang Sederhana keluarga yang Sederhana, memiliki 2 anak kembar dan 1 anak lagi, memiliki 1 kendaraan, memiliki 1 rumah'])}
-`.trim(), m)
-}
-handler.help = ['masadepan']
-handler.tags = ['fun']
-handler.command = /^masadepan/i
-handler.owner = false
-handler.mods = false
-handler.premium = false
-handler.group = false
-handler.private = false
+The future of ${text ? text : "you"} ${pickRandom([
+      "You will become a wealthy person with a harmonious family, 2 children, 4 vehicles, and 2 houses",
+      "You will live a modest life with a harmonious family, 3 children, 1 vehicle, and 1 house",
+      "You will struggle financially with a simple family, 1 child, no vehicle, and renting a home",
+      "You will have a modest life after divorce, with 5 children, 2 vehicles, and 2 houses",
+      "You will have a comfortable middle-class life with 2 children, 2 vehicles, and 1 house",
+      "You will face financial difficulties after divorce, with 2 children, 1 vehicle, and 1 house",
+      "You will become rich with a simple family, 1 child, 1 vehicle, and 2 houses",
+      "You will have a modest but happy family with 1 child, 3 vehicles, and 1 house",
+      "You will remain single with no children, no vehicle, and no property",
+      "You will have a large modest family with 4 children, 1 vehicle, and 2 houses",
+      "You will face family troubles with no children, 2 vehicles, and 1 house",
+      "You will become extremely wealthy with a perfect family, 5 children, 7 vehicles, and 9 houses",
+      "You will live in poverty with a simple family, 9 children, no vehicle, and renting a home",
+      "You will be wealthy but stingy, with 2 children, 2 vehicles, and 2 houses",
+      "You will be modest but stingy, with 1 child, 1 vehicle, and 1 house",
+      "You will divorce and live modestly with 2 children, 1 vehicle, and renting a home",
+      "You will have a peaceful modest life with 1 child, 1 vehicle, and 1 house",
+      "You will have a very simple life with 11 children, 1 vehicle, and 1 house",
+      "You will have twins in a modest family, with 3 vehicles and 2 houses",
+      "You will have twins plus another child in a modest family, with 1 vehicle and 1 house",
+    ])}
+`.trim(),
+    m
+  );
+};
 
-handler.admin = false
-handler.botAdmin = false
+handler.help = ["future"];
+handler.tags = ["fun"];
+handler.command = /^(future|masadepan)$/i;
+handler.owner = false;
+handler.mods = false;
+handler.premium = false;
+handler.group = false;
+handler.private = false;
 
-handler.fail = null
-
-module.exports = handler 
+handler.admin = false;
+handler.botAdmin = false;
+handler.fail = null;
 
 function pickRandom(list) {
-  return list[Math.floor(Math.random() * list.length)]
+  return list[Math.floor(Math.random() * list.length)];
 }
+
+module.exports = handler;

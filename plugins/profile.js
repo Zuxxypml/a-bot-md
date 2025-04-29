@@ -1,44 +1,69 @@
-let PhoneNumber = require('awesome-phonenumber')
-let levelling = require('../lib/levelling')
+const PhoneNumber = require("awesome-phonenumber");
+const levelling = require("../lib/levelling");
+
 let handler = async (m, { conn, usedPrefix }) => {
-  let pp = false
-  let who = m.mentionedJid && m.mentionedJid[0] ? m.mentionedJid[0] : m.sender
+  let pp = false;
+  let who = m.mentionedJid && m.mentionedJid[0] ? m.mentionedJid[0] : m.sender;
+
   try {
-    pp = await conn.profilePictureUrl(who, 'image')
+    pp = await conn.profilePictureUrl(who, "image");
   } catch (e) {
-
-  } finally {
-    let about = (await conn.fetchStatus(who).catch(console.error) || {}).status || ''
-    let { name, limit, exp, pasangan, lastclaim, registered, regTime, age, level, role, banned } = global.db.data.users[who]
-    if (!(who in global.db.data.users)) throw 'User belum terdaftar'
-    let { min, xp, max } = levelling.xpRange(level, global.multiplier)
-    let prem = global.prems.includes(who.split`@`[0])
-    let jodoh = `Berpacaran @${pasangan.split`@`[0]}`
-    let math = max - xp
-    let nama = (registered ? name : await conn.getName(who, { withoutContact: true }))
-    let str = `
-*Nama:* ${nama}${about ? '\nInfo: ' + about : ''}
-*Nomor:* https://wa.me/${who.replace(/[^0-9]/g, '')}${registered ? `\n*Umur:* ${age}` : ''}
-
-*Status:*
-${registered ? '✅' : '❌'} Terdaftar
-${banned ? '✅' : '❌'} DiBanned//Blokir
-${prem ? '✅' : '❌'} Premium
-
-*XP:* ${exp} (${exp - min} / ${xp})
-[ ${math <= 0 ? `Siap✅ untuk *${usedPrefix}levelup*` : `Butuh ${math} XP lagi untuk levelup`} ]
-*Level:* ${level}
-*Status:* ${pasangan ? jodoh : 'Jomblo' }
-*Role:* ${role}
-*Limit:* ${limit}
-`.trim()
-    if (!(pp == false)) {
-      conn.sendFile(m.chat, pp, 'pp.jpg', str, m)
-    } else m.reply(str)
+    // ignore error if profile picture isn't accessible
   }
-}
-handler.help = ['profile @user']
-handler.tags = ['xp']
-handler.command = /^profile?$/i
-module.exports = handler
 
+  const about =
+    ((await conn.fetchStatus(who).catch(console.error)) || {}).status || "";
+  const user = global.db.data.users[who];
+
+  if (!user) throw "User is not registered.";
+
+  const { name, limit, exp, pasangan, age, level, role, banned, registered } =
+    user;
+  const { min, xp, max } = levelling.xpRange(level, global.multiplier);
+  const prem = global.prems.includes(who.split("@")[0]);
+  const remainingXP = max - xp;
+  const partner = pasangan
+    ? `In a relationship with @${pasangan.split("@")[0]}`
+    : "Single";
+  const nameDisplay = registered
+    ? name
+    : await conn.getName(who, { withoutContact: true });
+
+  const profileText = `
+👤 *Name:* ${nameDisplay}
+📱 *Number:* https://wa.me/${who.replace(/[^0-9]/g, "")}
+📄 *Bio:* ${about || "No bio set"}
+
+🧾 *Status:*
+• Registered: ${registered ? "✅ Yes" : "❌ No"}
+• Banned: ${banned ? "✅ Yes" : "❌ No"}
+• Premium: ${prem ? "✅ Yes" : "❌ No"}
+
+📈 *Experience:*
+• XP: ${exp} (${exp - min} / ${xp})
+• Level: ${level}
+• Role: ${role}
+• ${
+    remainingXP <= 0
+      ? `✅ Ready for *${usedPrefix}levelup*`
+      : `❌ Need ${remainingXP} more XP to level up`
+  }
+
+❤️ *Relationship:* ${partner}
+🎫 *Limit:* ${limit}
+`.trim();
+
+  if (pp) {
+    conn.sendFile(m.chat, pp, "profile.jpg", profileText, m, {
+      mentions: [pasangan],
+    });
+  } else {
+    m.reply(profileText);
+  }
+};
+
+handler.help = ["profile @user"];
+handler.tags = ["xp"];
+handler.command = /^profile?$/i;
+
+module.exports = handler;

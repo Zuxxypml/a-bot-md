@@ -1,12 +1,25 @@
-let handler = async (m, { conn }) => {
-    conn.siapaaku = conn.siapaaku ? conn.siapaaku : {}
-    let id = m.chat
-    if (!(id in conn.siapaaku)) throw false
-    let json = conn.siapaaku[id][1]
-    let nya = json.result.answer
-    let nyanya = nya.replace(/[bcdfghjklmnpqrstvwxyz]/g, '_')
-    m.reply('```' + nyanya + '```')
-}
-handler.command = /^siapasih$/i
-handler.limit = true
-module.exports = handler 
+const handler = async (m, { conn }) => {
+  // Initialize quiz store if needed
+  conn.siapaaku = conn.siapaaku || {};
+  const chatId = m.chat;
+
+  // If there's no active quiz, do nothing
+  if (!(chatId in conn.siapaaku)) return false;
+
+  // Get the quiz data and answer
+  const [, quizData] = conn.siapaaku[chatId];
+  const answer = quizData.result.answer;
+
+  // Replace all consonants with underscores for the puzzle
+  const puzzle = answer.replace(/[bcdfghjklmnpqrstvwxyz]/gi, "_");
+
+  // Send the puzzle to the chat
+  await m.reply(`Fill in the blanks:\n\`\`\`${puzzle}\`\`\``);
+};
+
+handler.command = /^whoami$/i;
+handler.help = ["whoami"];
+handler.tags = ["quiz"];
+handler.limit = true;
+
+module.exports = handler;

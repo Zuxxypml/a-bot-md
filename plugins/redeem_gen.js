@@ -1,48 +1,53 @@
-let fs = require('fs')
-let data = JSON.parse(fs.readFileSync('src/code_redeem.json'))
+const fs = require("fs");
+const path = require("path");
 
-let obj_ = data.group.trial
-let objhalf = data.group.half
-let obj = data.group.one
-let obj2 = data.group.two
-
-let all = obj_.concat(objhalf).concat(obj).concat(obj2)
-let er = `List\n ${Object.keys(data.group).map((v, i) => i + 1 + `. ${v}`).join('\n')}`
+// Load and write helper
+const DATA_FILE = path.join(__dirname, "../src/code_redeem.json");
+function loadData() {
+  return JSON.parse(fs.readFileSync(DATA_FILE, "utf8"));
+}
+function saveData(data) {
+  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), "utf8");
+}
 
 let handler = async (m, { text, usedPrefix }) => {
-    let code = newCode(text)
-    while (data.used.includes(code)) {
-        code = newCode()
-    }
-    m.reply(`*Jenis:* ${text}\n\n_Cara menggunakan:_\nSalin kode di bawah ini\nTempelkan di group yang ingin kamu aktifkan bot nya\n\n*Note : pastikan Bot sudah ditambahkan ke group kamu*`)
-    m.reply(`${usedPrefix}use ${code}`)
+  const data = loadData();
+  const { trial, half, one, two, used } = data.group;
+  const codePools = { trial, half, one, two };
+  const types = Object.keys(codePools);
 
+  const type = (text || "").trim();
+  if (!types.includes(type)) {
+    // List available types
+    return m.reply(
+      "⚠️ Invalid type!\nAvailable types:\n" +
+        types.map((t, i) => `${i + 1}. ${t}`).join("\n")
+    );
+  }
 
-}
-handler.help = ['generatecode']
-handler.tags = ['owner']
-handler.command = /^(gen(erate)?code)$/i
-handler.rowner = true
-module.exports = handler
+  // Generate a fresh unused code
+  let code;
+  do {
+    const pool = codePools[type];
+    code = pool[Math.floor(Math.random() * pool.length)];
+  } while (used.includes(code));
 
-function newCode(text) {
-    let code
-    switch (text) {
-        case 'trial':
-            code = obj_[Math.floor(Math.random() * 1000)]
-            break;
-        case 'half':
-            code = objhalf[Math.floor(Math.random() * 1000)]
-            break;
-        case 'one':
-            code = obj[Math.floor(Math.random() * 1000)]
-            break;
-        case 'two':
-            code = obj2[Math.floor(Math.random() * 1000)]
-            break;
-        default:
-            return er
-            break;
-    }
-    return code
-}
+  // Mark it used and save
+  data.group.used.push(code);
+  saveData(data);
+
+  // Reply to user
+  await m.reply(
+    `*Type:* ${type}\n\n` +
+      `_How to use:_ Copy the code below and paste it into the group where you want to activate the bot._\n\n` +
+      `*Note:* Make sure the bot is already added to your group.`
+  );
+  await m.reply(`${usedPrefix}use ${code}`);
+};
+
+handler.help = ["generatecode <type>"];
+handler.tags = ["owner"];
+handler.command = /^(gen(erate)?code)$/i;
+handler.rowner = true;
+
+module.exports = handler;

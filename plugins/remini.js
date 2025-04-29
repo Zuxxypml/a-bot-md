@@ -1,142 +1,121 @@
 const FormData = require("form-data");
-const Jimp = require("jimp");
 
-let handler = async (m, {
-    conn,
-    usedPrefix,
-    command
-}) => {
-    conn.hdr = conn.hdr ? conn.hdr : {};
-    const sender = m.sender.split(`@`)[0];
+let handler = async (m, { conn, usedPrefix, command }) => {
+  conn.hdr = conn.hdr || {};
+  const senderId = m.sender.split(`@`)[0];
 
-    if (m.sender in conn.hdr)
-        throw "Masih Ada Proses Yang Belum Selesai Kak, Silahkan Tunggu Sampai Selesai Yah >//<";
+  // Prevent multiple concurrent processes per user
+  if (conn.hdr[m.sender]) {
+    throw "🚧 You already have an ongoing process. Please wait until it finishes.";
+  }
 
-    let q = m.quoted ? m.quoted : m;
-    let mime = (q.msg || q).mimetype || q.mediaType || "";
+  // Identify the message (quoted or own)
+  let q = m.quoted || m;
+  let mime = (q.msg || q).mimetype || q.mediaType || "";
 
-    if (!mime)
-        throw `Fotonya Mana Kak?\nEx: ${usedPrefix + command} reply foto atau kasih caption di foto\n\nNote: Menggunakan 1 limit`;
+  // Validate presence of an image
+  if (!mime) {
+    throw `❓ Please reply to a photo or send a photo with caption *${
+      usedPrefix + command
+    }*.\n\nNote: This uses 1 limit.`;
+  }
+  if (!/image\/(jpe?g|png)/.test(mime)) {
+    throw `❌ Unsupported format: ${mime}. Only JPEG or PNG allowed.`;
+  }
 
-    if (!/image\/(jpe?g|png)/.test(mime))
-        throw `Mime ${mime} tidak support`;
-    else conn.hdr[m.sender] = true;
+  // Mark process started
+  conn.hdr[m.sender] = true;
+  m.reply("🕒 Downloading image...");
+  let imgBuffer = await q.download();
 
-    m.reply("Proses Kak...\nGambar sedang di download");
+  m.reply("✨ Image downloaded. Enhancing now...");
 
-    let img = await q.download?.();
+  let errorOccurred = false;
+  try {
+    // Call enhancement API
+    const enhanced = await enhanceImage(imgBuffer);
 
-    m.reply("gambar selesai di download\nMulai menjernihkan");
-
-    let error;
-
-    try {
-        const This = await processing(img, "enhance");
-        // conn.sendFile(m.chat, This, "hd.jpg", `Sudah Jadi Kak @${sender} >//<`, m);
-        await conn.sendMessage(
-            m.chat, {
-            document: This,
-            mimetype: "image/jpg",
-            fileName: `hd.jpg`,
-            caption: `versi jpg Document, Sudah Jadi Kak @${sender} >//<`,
-            mentions: [m.sender],
-        }, {
-            quoted: m
-        }
-        );
-        await conn.sendMessage(
-            m.chat, {
-            document: This,
-            mimetype: "image/png",
-            fileName: `hd.png`,
-            caption: `Sudah Jadi Kak @${sender} >//<`,
-            mentions: [m.sender],
-        }, {
-            quoted: m
-        }
-        );
-        await conn.sendMessage(
-            m.chat, {
-            image: This,
-            mimetype: "image/jpg",
-            fileName: `hd.jpg`,
-            caption: `Sudah Jadi Kak @${sender} TIPE: JPG/JPEG >//<`,
-            mentions: [m.sender],
-        }, {
-            quoted: m
-        }
-        );
-        await conn.sendMessage(
-            m.chat, {
-            image: This,
-            mimetype: "image/png",
-            fileName: `hd.png`,
-            caption: `Sudah Jadi Kak @${sender} TIPE: PNG>//<`,
-            mentions: [m.sender],
-        }, {
-            quoted: m
-        }
-        );
-    } catch (er) {
-        error = true;
-    } finally {
-        if (error) {
-            m.reply("Proses Gagal :(" + error);
-        }
-        delete conn.hdr[m.sender];
-    }
+    // Send back in multiple formats
+    await conn.sendMessage(
+      m.chat,
+      {
+        document: enhanced,
+        mimetype: "image/jpeg",
+        fileName: "enhanced.jpg",
+        caption: `✅ Here’s your enhanced image (JPEG) @${senderId}`,
+        mentions: [m.sender],
+      },
+      { quoted: m }
+    );
+    await conn.sendMessage(
+      m.chat,
+      {
+        document: enhanced,
+        mimetype: "image/png",
+        fileName: "enhanced.png",
+        caption: `✅ Here’s your enhanced image (PNG) @${senderId}`,
+        mentions: [m.sender],
+      },
+      { quoted: m }
+    );
+    await conn.sendMessage(
+      m.chat,
+      { image: enhanced, caption: `✅ Enhanced image (JPEG) @${senderId}` },
+      { quoted: m }
+    );
+    await conn.sendMessage(
+      m.chat,
+      { image: enhanced, caption: `✅ Enhanced image (PNG) @${senderId}` },
+      { quoted: m }
+    );
+  } catch (err) {
+    console.error(err);
+    errorOccurred = true;
+    m.reply("❌ Enhancement failed: " + err.message);
+  } finally {
+    // Clean up process flag
+    delete conn.hdr[m.sender];
+  }
 };
 
-handler.help = ['remini'];
-handler.tags = ['tools'];
+handler.help = ["remini"];
+handler.tags = ["tools"];
 handler.command = /^(remini)$/i;
-//handler.register = false;
 handler.limit = true;
-//handler.disable = false;
 
 module.exports = handler;
 
-async function processing(urlPath, method) {
-    return new Promise(async (resolve, reject) => {
-        let Methods = ["enhance"];
-        Methods.includes(method) ? (method = method) : (method = Methods[0]);
-
-        let buffer,
-            Form = new FormData(),
-            scheme = "https" + "://" + "inferenceengine" + ".vyro" + ".ai/" + method;
-
-        Form.append("model_version", 1);
-
-        Form.append("image", Buffer.from(urlPath), {
-            filename: "enhance_image_body.jpg",
-            contentType: "image/jpeg",
-        });
-
-        Form.submit({
-            url: scheme,
-            host: "inferenceengine" + ".vyro" + ".ai",
-            path: "/" + method,
-            protocol: "https:",
-            headers: {
-                "User-Agent": "okhttp/4.9.3",
-                Connection: "Keep-Alive",
-                "Accept-Encoding": "gzip",
-            },
-        },
-            function (err, res) {
-                if (err) reject(err);
-                let data = [];
-                res
-                    .on("data", function (chunk) {
-                        data.push(chunk);
-                    })
-                    .on("end", () => {
-                        resolve(Buffer.concat(data));
-                    });
-                res.on("error", (e) => {
-                    reject(e);
-                });
-            }
-        );
+/**
+ * Sends the image buffer to the enhancement API and returns the enhanced buffer.
+ */
+async function enhanceImage(buffer) {
+  return new Promise((resolve, reject) => {
+    const form = new FormData();
+    form.append("model_version", 1);
+    form.append("image", buffer, {
+      filename: "input.jpg",
+      contentType: "image/jpeg",
     });
+
+    form.submit(
+      {
+        protocol: "https:",
+        host: "inferenceengine.vyro.ai",
+        path: "/enhance",
+        headers: {
+          "User-Agent": "okhttp/4.9.3",
+          Connection: "Keep-Alive",
+          "Accept-Encoding": "gzip",
+        },
+      },
+      (err, res) => {
+        if (err) return reject(err);
+        const chunks = [];
+        res
+          .on("data", (chunk) => chunks.push(chunk))
+          .on("end", () => resolve(Buffer.concat(chunks)))
+          .on("error", (e) => reject(e));
+      }
+    );
+  });
 }
