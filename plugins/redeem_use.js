@@ -1,21 +1,40 @@
 const fs = require("fs");
+const path = require("path");
 
-// Load existing group activations and redeem codes
-let groupData = JSON.parse(fs.readFileSync("./src/group.json", "utf8"));
-let redeemData = JSON.parse(fs.readFileSync("./src/code_redeem.json", "utf8"));
+// Resolve files from your project root
+const GROUP_FILE = path.resolve(process.cwd(), "src", "group.json");
+const REDEEM_FILE = path.resolve(process.cwd(), "src", "code_redeem.json");
 
-let trialCodes = redeemData.group.trial;
-let halfCodes = redeemData.group.half;
-let oneCodes = redeemData.group.one;
-let twoCodes = redeemData.group.two;
-
-// All possible codes
-let allCodes = trialCodes.concat(halfCodes, oneCodes, twoCodes);
+// Helpers to load & save
+function loadJSON(filePath, fallback) {
+  try {
+    return JSON.parse(fs.readFileSync(filePath, "utf8"));
+  } catch (e) {
+    return fallback;
+  }
+}
+function saveJSON(filePath, data) {
+  fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf8");
+}
 
 let handler = async (
   m,
   { conn, args, usedPrefix, participants, groupMetadata }
 ) => {
+  // Load current state
+  let groupData = loadJSON(GROUP_FILE, []);
+  let redeemData = loadJSON(REDEEM_FILE, { group: {}, used: [] });
+
+  const {
+    trial = [],
+    half = [],
+    one = [],
+    two = [],
+    used = [],
+  } = redeemData.group;
+
+  const allCodes = [...trial, ...half, ...one, ...two];
+
   // Prevent using master bot's code pool in its own group
   if (conn.user.jid !== global.conn.user.jid) {
     if (participants.map((v) => v.id).includes(global.conn.user.jid)) {
@@ -23,17 +42,32 @@ let handler = async (
     }
   }
 
-  let chatSettings = global.db.data.chats[m.chat];
-  let newGroupEntry = {};
-  let durationDays;
+  const chatSettings = (global.db.data.chats[m.chat] =
+    global.db.data.chats[m.chat] || {});
 
-  // If already initialized, do not allow re-activation
+  // Already activated?
   if (chatSettings.init) {
     throw "The bot is already active in this group.";
   }
 
-  // Trial code cooldown check
-  if (chatSettings.trial && trialCodes.includes(args[0])) {
+  // Ensure code provided
+  const code = args[0];
+  if (!code) {
+    throw `Please provide a redeem code.\nUsage: ${usedPrefix}use <code>`;
+  }
+
+  // Code already used?
+  if (redeemData.used.includes(code)) {
+    throw "This code has already been used. Please obtain a new code from the owner.";
+  }
+
+  // Code must exist
+  if (!allCodes.includes(code)) {
+    throw "Invalid code.";
+  }
+
+  // Trial cooldown?
+  if (chatSettings.trial && trial.includes(code)) {
     let retryIn = conn.msToDate(chatSettings.lastUse + 86400000 - Date.now());
     return conn.reply(
       m.chat,
@@ -44,31 +78,20 @@ let handler = async (
     );
   }
 
-  // Ensure code argument present
-  if (!args[0]) {
-    throw `Please provide a redeem code.\nUsage: ${usedPrefix}use <code>`;
-  }
-
-  // Check if code was used
-  if (redeemData.used.includes(args[0])) {
-    throw "This code has already been used. Please obtain a new code from the owner.";
-  }
-
-  // Validate code exists
-  if (!allCodes.includes(args[0])) {
-    throw "Invalid code.";
-  }
-
-  // Determine activation duration based on code type
-  if (trialCodes.includes(args[0])) {
+  // Determine duration
+  let durationDays;
+  if (trial.includes(code)) {
     chatSettings.trial = true;
     durationDays = 3;
+  } else if (half.includes(code)) {
+    durationDays = 15;
+  } else if (one.includes(code)) {
+    durationDays = 30;
+  } else if (two.includes(code)) {
+    durationDays = 60;
   }
-  if (halfCodes.includes(args[0])) durationDays = 15;
-  if (oneCodes.includes(args[0])) durationDays = 30;
-  if (twoCodes.includes(args[0])) durationDays = 60;
 
-  // Notify success
+  // Activate
   await conn.reply(
     m.chat,
     `✅ Activation successful!\n` +
@@ -76,21 +99,29 @@ let handler = async (
     m
   );
 
-  // Set group expiry timestamp
-  chatSettings.gcdate = Date.now() + durationDays * 86400000;
-  newGroupEntry.expired = Date.now() + durationDays * 86400000;
-
-  // Save group info
-  newGroupEntry.name = `${groupMetadata.subject} (${m.chat})`;
-  newGroupEntry.owner_group = m.chat.split("-")[0];
-  newGroupEntry.joiner = m.sender;
+  // Set expiry & mark init
+  const expiry = Date.now() + durationDays * 86400000;
+  chatSettings.gcdate = expiry;
   chatSettings.init = true;
+  chatSettings.lastUse = Date.now();
 
-  // Mark code used and persist both files
-  redeemData.used.push(args[0]);
-  groupData.push(newGroupEntry);
-  fs.writeFileSync("./src/group.json", JSON.stringify(groupData, null, 2));
-  fs.writeFileSync("src/code_redeem.json", JSON.stringify(redeemData, null, 2));
+  // Record in groupData
+  groupData.push({
+    name: `${groupMetadata.subject} (${m.chat})`,
+    owner_group: m.chat.split("-")[0],
+    joiner: m.sender,
+    expired: expiry,
+  });
+
+  // Mark code used
+  redeemData.used.push(code);
+
+  // Persist both files
+  saveJSON(GROUP_FILE, groupData);
+  saveJSON(REDEEM_FILE, redeemData);
+
+  // Don't forget to write to your in-memory DB too
+  await global.db.write();
 };
 
 handler.help = ["use <code>"];
