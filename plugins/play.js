@@ -3,54 +3,66 @@ const fs = require("fs");
 const ffmpeg = require("fluent-ffmpeg");
 const search = require("yt-search");
 const path = require("path");
-const agent = ytdl.createAgent(
-  JSON.parse(fs.readFileSync("./lib/coklat.json"))
-);
+
+// Resolve everything from project root
+const PROJECT_ROOT = process.cwd();
+const COKLAT_CONFIG = path.resolve(PROJECT_ROOT, "lib", "coklat.json");
+const TMP_DIR = path.resolve(PROJECT_ROOT, "tmp");
+
+// Load your custom agent config
+const agentOptions = JSON.parse(fs.readFileSync(COKLAT_CONFIG, "utf8"));
+const agent = ytdl.createAgent(agentOptions);
+
+// Ensure tmp folder exists
+if (!fs.existsSync(TMP_DIR)) fs.mkdirSync(TMP_DIR, { recursive: true });
 
 let handler = async (m, { conn, text, usedPrefix, command }) => {
-  if (!text)
+  if (!text) {
     return m.reply(
       `💡 *Example:* ${usedPrefix}${command} Metamorphosis Slowed`
     );
+  }
 
+  // Show “typing” reaction
   await conn.sendMessage(m.chat, {
     react: { text: "🕒", key: m.key },
   });
 
   try {
+    // 1) Search YouTube
     const results = await search(text);
-    const videoId = results.videos[0].videoId;
+    const video = results.videos[0];
+    if (!video) throw new Error("No results found");
+
+    const videoId = video.videoId;
     const info = await ytdl.getInfo(videoId, { agent });
 
-    const title = info.videoDetails.title.replace(/[^\w\s]/gi, "");
+    // 2) Build metadata
+    const rawTitle = info.videoDetails.title;
+    const title = rawTitle.replace(/[<>:"/\\|?*\x00-\x1F]/g, "").slice(0, 50);
     const thumbnailUrl = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
     const url = info.videoDetails.video_url;
-    const duration = parseInt(info.videoDetails.lengthSeconds);
+    const durationSec = parseInt(info.videoDetails.lengthSeconds, 10);
+    const minutes = Math.floor(durationSec / 60);
+    const seconds = durationSec % 60;
+    const durationText = `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
+    const views = formatViews(info.videoDetails.viewCount);
     const uploadDate = new Date(
       info.videoDetails.publishDate
     ).toLocaleDateString();
-    const views = info.videoDetails.viewCount;
-    const description = results.videos[0].description;
-    const minutes = Math.floor(duration / 60);
-    const seconds = duration % 60;
-    const durationText = `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
-    const viewsFormatted = formatViews(views);
+    const description = video.description || "";
 
-    const inputFilePath = `tmp/${title}.webm`;
-    const outputFilePath = `tmp/${title}.mp3`;
-    const audioStream = ytdl(videoId, { quality: "highestaudio", agent });
-
+    // 3) Send a rich preview
     const infoText = `
 ╭─ •  *P L A Y*
-│ ◦ *Title*: ${title}
+│ ◦ *Title*: ${rawTitle}
 │ ◦ *Duration*: ${durationText}
 │ ◦ *Upload*: ${uploadDate}
-│ ◦ *Views*: ${viewsFormatted}
+│ ◦ *Views*: ${views}
 │ ◦ *ID*: ${videoId}
 ╰──── •
 `.trim();
 
-    // Send preview message with thumbnail and description
     await conn.relayMessage(
       m.chat,
       {
@@ -58,7 +70,7 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
           text: infoText,
           contextInfo: {
             externalAdReply: {
-              title: `🎵 P L A Y`,
+              title: "🎵 P L A Y",
               body: description,
               mediaType: 1,
               previewType: 0,
@@ -73,36 +85,47 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
       {}
     );
 
-    // Pipe and convert to mp3
-    fs.mkdirSync("tmp", { recursive: true });
-    const writeStream = fs.createWriteStream(inputFilePath);
-    audioStream.pipe(writeStream).on("finish", async () => {
-      ffmpeg(inputFilePath)
-        .toFormat("mp3")
-        .on("end", async () => {
-          const buffer = fs.readFileSync(outputFilePath);
-          const fileName = `${title}.mp3`;
-
-          await conn.sendFile(m.chat, buffer, fileName, "", m); // normal
-          await conn.sendFile(m.chat, buffer, fileName, "", m, null, {
-            asDocument: true,
-          }); // as document
-
-          // Clean up
-          fs.unlinkSync(inputFilePath);
-          fs.unlinkSync(outputFilePath);
-        })
-        .on("error", (err) => {
-          console.error(err);
-          m.reply(`❌ Error converting audio: ${err.message}`);
-          if (fs.existsSync(inputFilePath)) fs.unlinkSync(inputFilePath);
-          if (fs.existsSync(outputFilePath)) fs.unlinkSync(outputFilePath);
-        })
-        .save(outputFilePath);
+    // 4) Download audio and save to tmp
+    const inputPath = path.join(TMP_DIR, `${title}.webm`);
+    const outputPath = path.join(TMP_DIR, `${title}.mp3`);
+    await new Promise((resolve, reject) => {
+      ytdl(videoId, { quality: "highestaudio", agent })
+        .pipe(fs.createWriteStream(inputPath))
+        .on("finish", resolve)
+        .on("error", reject);
     });
-  } catch (e) {
-    console.error(e);
-    m.reply(`❌ Error searching or downloading audio: ${e.message}`);
+
+    // 5) Convert with ffmpeg
+    await new Promise((resolve, reject) => {
+      ffmpeg(inputPath)
+        .toFormat("mp3")
+        .on("end", resolve)
+        .on("error", reject)
+        .save(outputPath);
+    });
+
+    // 6) Send back both as audio & as document
+    const buffer = fs.readFileSync(outputPath);
+    const fileName = `${title}.mp3`;
+
+    await conn.sendFile(m.chat, buffer, fileName, "", m);
+    await conn.sendFile(m.chat, buffer, fileName, "", m, null, {
+      asDocument: true,
+    });
+
+    // 7) Cleanup
+    [inputPath, outputPath].forEach((f) => {
+      if (fs.existsSync(f)) fs.unlinkSync(f);
+    });
+  } catch (err) {
+    console.error(err);
+    // Attempt cleanup on error
+    fs.readdirSync(TMP_DIR).forEach((file) => {
+      if (file.endsWith(".webm") || file.endsWith(".mp3")) {
+        fs.unlinkSync(path.join(TMP_DIR, file));
+      }
+    });
+    m.reply(`❌ Error: ${err.message}`);
   }
 };
 
@@ -113,10 +136,10 @@ handler.limit = false;
 
 module.exports = handler;
 
-// Helper function
+// Helper: human-readable view count
 function formatViews(views) {
-  views = parseInt(views);
-  if (views >= 1e6) return (views / 1e6).toFixed(1) + "M";
-  if (views >= 1e3) return (views / 1e3).toFixed(1) + "K";
-  return views.toString();
+  const n = parseInt(views, 10);
+  if (n >= 1e6) return (n / 1e6).toFixed(1) + "M";
+  if (n >= 1e3) return (n / 1e3).toFixed(1) + "K";
+  return n.toString();
 }
