@@ -1,26 +1,29 @@
 const { sticker } = require("../lib/sticker");
 const WSF = require("wa-sticker-formatter");
+
 let handler = (m) => m;
 
 handler.before = async function (m) {
-  let chat = global.db.data.chats[m.chat];
-  let user = global.db.data.users[m.sender];
+  const chat = global.db.data.chats[m.chat];
+  const user = global.db.data.users[m.sender];
 
-  //Auto stiker
+  // Auto Sticker - USER BASED
   if (
-    chat.stiker &&
+    user.autosticker &&
     !user.banned &&
     !chat.isBanned &&
     !m.fromMe &&
     !m.isBaileys
   ) {
-    // try {
     if (/^.*s(tic?ker)?(gif)?$/i.test(m.text)) return;
+
     let q = m;
+    let mime = (q.msg || q).mimetype || "";
     let stiker = false;
     let wsf = false;
-    let mime = (q.msg || q).mimetype || "";
+
     if (/webp/.test(mime)) return;
+
     if (/image/.test(mime)) {
       let img = await q.download();
       if (!img) return;
@@ -30,55 +33,35 @@ handler.before = async function (m) {
         crop: false,
       });
     } else if (/video/.test(mime)) {
-      if ((q.msg || q).seconds > 11) return m.reply("Maksimal 10 detik!");
-      let img = await q.download();
-      if (!img) return;
-      wsf = new WSF.Sticker(img, {
+      if ((q.msg || q).seconds > 11)
+        return m.reply("Max duration is 10 seconds!");
+      let vid = await q.download();
+      if (!vid) return;
+      wsf = new WSF.Sticker(vid, {
         pack: global.packname,
         author: global.author,
         crop: true,
       });
     } else if (m.text.split` `[0]) {
-      if (isUrl(m.text.split` `[0]))
-        stiker = await sticker(
-          false,
-          m.text.split` `[0],
-          global.packname,
-          global.author
-        );
-      else return;
+      let url = m.text.split` `[0];
+      if (isUrl(url))
+        stiker = await sticker(false, url, global.packname, global.author);
     }
+
     if (wsf) {
       await wsf.build();
       const sticBuffer = await wsf.get();
       if (sticBuffer)
-        await this.sendMessage(
-          m.chat,
-          { sticker: sticBuffer },
-          {
-            quoted: m,
-            mimetype: "image/webp",
-            ephemeralExpiration: 86400,
-          }
-        );
+        await this.sendMessage(m.chat, { sticker: sticBuffer }, { quoted: m });
     }
+
     if (stiker)
-      await this.sendMessage(
-        m.chat,
-        { sticker: stiker },
-        {
-          quoted: m,
-          mimetype: "image/webp",
-          ephemeralExpiration: 86400,
-        }
-      );
-    // } finally {
-    //     if (stiker) {
-    //     }
-    // }
+      await this.sendMessage(m.chat, { sticker: stiker }, { quoted: m });
   }
+
   return true;
 };
+
 module.exports = handler;
 
 const isUrl = (text) => {

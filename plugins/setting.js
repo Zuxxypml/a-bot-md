@@ -1,6 +1,6 @@
 let handler = async (m, { conn, usedPrefix }) => {
-  const users = global.db.data.users[m.sender];
-  const chats = global.db.data.chats[m.chat];
+  const users = (global.db.data.users[m.sender] ||= {});
+  const chats = (global.db.data.chats[m.chat] ||= {});
 
   const rows = [
     {
@@ -12,19 +12,19 @@ let handler = async (m, { conn, usedPrefix }) => {
       title: `Auto Level Up (${users.autolevelup ? "On" : "Off"})`,
       description:
         "Automatically level up when XP is sufficient\nScope: Private",
-      rowId: `${usedPrefix}set levelup`,
+      rowId: `${usedPrefix}set autolevelup`,
     },
     {
-      title: `Auto Sticker (${users.stiker ? "On" : "Off"})`,
+      title: `Auto Sticker (${users.autosticker ? "On" : "Off"})`,
       description:
-        "Automatically convert received images to stickers\nScope: Chat",
-      rowId: `${usedPrefix}set stiker`,
+        "Automatically convert received images to stickers\nScope: Private",
+      rowId: `${usedPrefix}set autosticker`,
     },
     {
       title: `Send as Document (${users.useDocument ? "On" : "Off"})`,
       description:
         "Send downloaded files as documents instead of media\nScope: Private",
-      rowId: `${usedPrefix}set document`,
+      rowId: `${usedPrefix}set usedocument`,
     },
     {
       title: `Group Game Mode (${chats.game ? "On" : "Off"})`,
@@ -47,13 +47,13 @@ let handler = async (m, { conn, usedPrefix }) => {
       rowId: `${usedPrefix}set detect`,
     },
     {
-      title: `View-Once Bypass (${chats.viewonce ? "Off" : "On"})`,
+      title: `View-Once Bypass (${chats.viewonce ? "On" : "Off"})`,
       description:
         "Convert view-once messages into normal messages\nScope: Group",
       rowId: `${usedPrefix}set viewonce`,
     },
     {
-      title: `Anti-Delete (${chats.delete ? "Off" : "On"})`,
+      title: `Anti-Delete (${chats.delete ? "On" : "Off"})`,
       description: "Restore messages deleted by members\nScope: Group",
       rowId: `${usedPrefix}set antidelete`,
     },
@@ -63,13 +63,13 @@ let handler = async (m, { conn, usedPrefix }) => {
   if (!m.isGroup) rows.splice(4, 6);
 
   const sections = [{ title: "Bot Settings", rows }];
-  const button = {
+  const listMessage = {
     buttonText: "Open Settings",
     text: "Please choose an option:",
     sections,
   };
 
-  await conn.sendMessage(m.chat, button, { quoted: m });
+  await conn.sendMessage(m.chat, listMessage, { quoted: m });
 };
 
 handler.tags = ["info", "main"];

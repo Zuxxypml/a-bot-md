@@ -1,22 +1,41 @@
-let handler = async (m, { conn, text, usedPrefix }) => {
-  if (!text)
-    throw `❗ Please specify a setting name.\n\nUsage:\n${usedPrefix}set <setting>`;
+let handler = async (m, { text, usedPrefix }) => {
+  if (!text) {
+    throw `❗ Please specify a setting to toggle.\n\nUsage:\n${usedPrefix}set <setting>\nExample: ${usedPrefix}set welcome`;
+  }
 
-  const title = text.toUpperCase();
-  const message = `*${title}*\nWould you like to turn this setting ON or OFF?`;
-  const footer = "Select an option below:";
+  const key = text.toLowerCase().trim();
+  const chat = (global.db.data.chats[m.chat] ||= {});
+  const user = (global.db.data.users[m.sender] ||= {});
 
-  // Send two buttons: On and Off
-  await conn.sendButton(
-    m.chat,
-    message,
-    footer,
-    2,
-    ["On", `${usedPrefix}on ${text}`, "Off", `${usedPrefix}off ${text}`],
-    m
-  );
+  // Combined scope
+  const combinedScope = {
+    // group-level settings
+    antilink: chat,
+    welcome: chat,
+    detect: chat,
+    viewonce: chat,
+    delete: chat,
+    game: chat,
+
+    // user-level settings
+    autolevelup: user,
+    autosticker: user,
+    useDocument: user,
+  };
+
+  if (!(key in combinedScope)) {
+    return m.reply(`❌ Unknown or unsupported setting: *${key}*`);
+  }
+
+  // Toggle the value
+  combinedScope[key][key] = !combinedScope[key][key];
+  const newState = combinedScope[key][key] ? "ON ✅" : "OFF ❌";
+
+  m.reply(`*${key.toUpperCase()}* has been toggled: ${newState}`);
 };
 
 handler.command = /^set$/i;
+handler.group = true;
+handler.admin = true;
 
 module.exports = handler;
