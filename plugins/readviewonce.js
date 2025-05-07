@@ -1,51 +1,46 @@
 const { downloadContentFromMessage } = require("@whiskeysockets/baileys");
 
 const handler = async (m, { conn }) => {
-  if (!m.quoted) {
+  let q = m.quoted || m;
+
+  if (!q || !q.message) {
     return conn.sendMessage(
       m.chat,
-      {
-        text: "❗ Please reply to a *View Once* image or video message.",
-      },
+      { text: "❗ Please reply to a *View Once* image or video message." },
       { quoted: m }
     );
   }
 
-  const quoted = m.quoted;
-  const type = Object.keys(quoted.message || {})[0];
-  const viewOnceContent = quoted.message?.[type]?.message;
+  const messageContent = q.message;
+  const isViewOnceV2 = messageContent.viewOnceMessageV2;
+  const isViewOnce = messageContent.viewOnceMessage;
 
-  if (!viewOnceContent) {
+  let innerMsg;
+  if (isViewOnceV2) innerMsg = messageContent.viewOnceMessageV2.message;
+  else if (isViewOnce) innerMsg = messageContent.viewOnceMessage.message;
+  else {
     return conn.sendMessage(
       m.chat,
-      {
-        text: "⚠️ This is not a valid *View Once* message.",
-      },
+      { text: "⚠️ This is not a valid *View Once* media message." },
       { quoted: m }
     );
   }
 
-  const isImage = !!viewOnceContent.imageMessage;
-  const isVideo = !!viewOnceContent.videoMessage;
+  const type = Object.keys(innerMsg)[0]; // imageMessage or videoMessage
+  const mediaMsg = innerMsg[type];
 
-  const mediaType = isImage ? "imageMessage" : isVideo ? "videoMessage" : null;
-  if (!mediaType) {
+  if (!["imageMessage", "videoMessage"].includes(type)) {
     return conn.sendMessage(
       m.chat,
-      {
-        text: "⚠️ Only *View Once* images or videos are supported.",
-      },
+      { text: "⚠️ Only *View Once* images or videos are supported." },
       { quoted: m }
     );
   }
 
-  const mediaMsg = viewOnceContent[mediaType];
   if (!mediaMsg?.mediaKey || !mediaMsg?.url) {
     return conn.sendMessage(
       m.chat,
-      {
-        text: "❌ Cannot fetch the media. It may have been viewed already or expired.",
-      },
+      { text: "❌ This media has likely expired or already been viewed." },
       { quoted: m }
     );
   }
@@ -53,7 +48,7 @@ const handler = async (m, { conn }) => {
   try {
     const stream = await downloadContentFromMessage(
       mediaMsg,
-      isImage ? "image" : "video"
+      type === "imageMessage" ? "image" : "video"
     );
 
     let buffer = Buffer.from([]);
@@ -61,16 +56,15 @@ const handler = async (m, { conn }) => {
       buffer = Buffer.concat([buffer, chunk]);
     }
 
-    const caption = mediaMsg.caption || "";
     return conn.sendFile(
       m.chat,
       buffer,
-      isImage ? "viewonce.jpg" : "viewonce.mp4",
-      caption,
+      type === "imageMessage" ? "viewonce.jpg" : "viewonce.mp4",
+      mediaMsg.caption || "",
       m
     );
   } catch (err) {
-    console.error("ViewOnce fetch error:", err);
+    console.error("readviewonce error:", err);
     return conn.sendMessage(
       m.chat,
       {
