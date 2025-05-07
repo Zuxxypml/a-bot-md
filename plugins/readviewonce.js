@@ -1,27 +1,53 @@
-import { downloadContentFromMessage } from "@whiskeysockets/baileys";
+const { downloadContentFromMessage } = require("@whiskeysockets/baileys");
 
 const handler = async (m, { conn }) => {
-  if (!m.quoted) throw "❗ Please reply to a *View Once* image/video message.";
+  if (!m.quoted) {
+    return conn.sendMessage(
+      m.chat,
+      {
+        text: "❗ Please reply to a *View Once* image or video message.",
+      },
+      { quoted: m }
+    );
+  }
 
   const quoted = m.quoted;
   const type = Object.keys(quoted.message || {})[0];
   const viewOnceContent = quoted.message?.[type]?.message;
 
-  if (!viewOnceContent)
-    throw "⚠️ This doesn't appear to be a proper *view-once* message.";
+  if (!viewOnceContent) {
+    return conn.sendMessage(
+      m.chat,
+      {
+        text: "⚠️ This is not a valid *View Once* message.",
+      },
+      { quoted: m }
+    );
+  }
 
   const isImage = !!viewOnceContent.imageMessage;
   const isVideo = !!viewOnceContent.videoMessage;
 
   const mediaType = isImage ? "imageMessage" : isVideo ? "videoMessage" : null;
-  if (!mediaType)
-    throw "⚠️ Only *view-once images* and *videos* are supported.";
+  if (!mediaType) {
+    return conn.sendMessage(
+      m.chat,
+      {
+        text: "⚠️ Only *View Once* images or videos are supported.",
+      },
+      { quoted: m }
+    );
+  }
 
   const mediaMsg = viewOnceContent[mediaType];
-
-  // ✅ Check if mediaKey or URL is missing (causes crash if not handled)
   if (!mediaMsg?.mediaKey || !mediaMsg?.url) {
-    throw "❌ Unable to fetch this view-once media. It may have already been opened or expired.";
+    return conn.sendMessage(
+      m.chat,
+      {
+        text: "❌ Cannot fetch the media. It may have been viewed already or expired.",
+      },
+      { quoted: m }
+    );
   }
 
   try {
@@ -36,7 +62,6 @@ const handler = async (m, { conn }) => {
     }
 
     const caption = mediaMsg.caption || "";
-
     return conn.sendFile(
       m.chat,
       buffer,
@@ -45,8 +70,14 @@ const handler = async (m, { conn }) => {
       m
     );
   } catch (err) {
-    console.error("readviewonce error:", err);
-    throw "❌ Failed to download media. It might have been deleted or already viewed.";
+    console.error("ViewOnce fetch error:", err);
+    return conn.sendMessage(
+      m.chat,
+      {
+        text: "❌ Failed to download the view-once media. It might have been deleted or already opened.",
+      },
+      { quoted: m }
+    );
   }
 };
 
@@ -54,4 +85,4 @@ handler.help = ["readvo"];
 handler.tags = ["info"];
 handler.command = ["readviewonce", "read", "liat", "readvo", "rvo"];
 
-export default handler;
+module.exports = handler;
