@@ -16,7 +16,7 @@ handler.all = async function (m, { isOwner }) {
   let { name, banned, registered } = user;
 
   let botInfo = `Main bot: @$${global.conn.user.jid.split`@`[0]}
-Instagram Bot: https://instagram.com/lev_botwa`;
+Instagram Bot: https://instagram.com/zuxxypml`;
 
   if (/^bot$/i.test(m.text)) {
     if (m.isGroup && chats.isBanned) return;
