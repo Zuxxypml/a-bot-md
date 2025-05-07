@@ -1,6 +1,6 @@
-const { downloadContentFromMessage } = require("@whiskeysockets/baileys");
+import { downloadContentFromMessage } from "@whiskeysockets/baileys";
 
-let handler = async (m, { conn }) => {
+const handler = async (m, { conn }) => {
   if (!m.quoted) throw "❗ Please reply to a View Once image/video message.";
 
   const quoted = m.quoted;
@@ -43,4 +43,4 @@ handler.help = ["readvo"];
 handler.tags = ["info"];
 handler.command = ["readviewonce", "read", "liat", "readvo", "rvo"];
 
-module.exports = handler;
+export default handler;
