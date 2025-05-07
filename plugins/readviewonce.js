@@ -83,6 +83,6 @@ const handler = async (m, { conn }) => {
 
 handler.help = ["readvo"];
 handler.tags = ["info"];
-handler.command = ["readviewonce", "read", "liat", "readvo", "rvo"];
+handler.command = ["readviewonce", "read", "readvo", "rvo"];
 
 module.exports = handler;
