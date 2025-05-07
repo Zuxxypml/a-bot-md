@@ -1,42 +1,53 @@
 import { downloadContentFromMessage } from "@whiskeysockets/baileys";
 
 const handler = async (m, { conn }) => {
-  if (!m.quoted) throw "❗ Please reply to a View Once image/video message.";
+  if (!m.quoted) throw "❗ Please reply to a *View Once* image/video message.";
 
   const quoted = m.quoted;
   const type = Object.keys(quoted.message || {})[0];
   const viewOnceContent = quoted.message?.[type]?.message;
 
   if (!viewOnceContent)
-    throw "⚠️ This doesn't appear to be a proper view-once message.";
+    throw "⚠️ This doesn't appear to be a proper *view-once* message.";
 
   const isImage = !!viewOnceContent.imageMessage;
   const isVideo = !!viewOnceContent.videoMessage;
 
   const mediaType = isImage ? "imageMessage" : isVideo ? "videoMessage" : null;
   if (!mediaType)
-    throw "⚠️ Only view-once *images* and *videos* are supported.";
+    throw "⚠️ Only *view-once images* and *videos* are supported.";
 
   const mediaMsg = viewOnceContent[mediaType];
-  const stream = await downloadContentFromMessage(
-    mediaMsg,
-    isImage ? "image" : "video"
-  );
 
-  let buffer = Buffer.from([]);
-  for await (const chunk of stream) {
-    buffer = Buffer.concat([buffer, chunk]);
+  // ✅ Check if mediaKey or URL is missing (causes crash if not handled)
+  if (!mediaMsg?.mediaKey || !mediaMsg?.url) {
+    throw "❌ Unable to fetch this view-once media. It may have already been opened or expired.";
   }
 
-  const caption = mediaMsg.caption || "";
+  try {
+    const stream = await downloadContentFromMessage(
+      mediaMsg,
+      isImage ? "image" : "video"
+    );
 
-  return conn.sendFile(
-    m.chat,
-    buffer,
-    isImage ? "viewonce.jpg" : "viewonce.mp4",
-    caption,
-    m
-  );
+    let buffer = Buffer.from([]);
+    for await (const chunk of stream) {
+      buffer = Buffer.concat([buffer, chunk]);
+    }
+
+    const caption = mediaMsg.caption || "";
+
+    return conn.sendFile(
+      m.chat,
+      buffer,
+      isImage ? "viewonce.jpg" : "viewonce.mp4",
+      caption,
+      m
+    );
+  } catch (err) {
+    console.error("readviewonce error:", err);
+    throw "❌ Failed to download media. It might have been deleted or already viewed.";
+  }
 };
 
 handler.help = ["readvo"];
