@@ -1,34 +1,42 @@
 const { downloadContentFromMessage } = require("@whiskeysockets/baileys");
 
 let handler = async (m, { conn }) => {
-  // Ensure user replied to a message
   if (!m.quoted) throw "❗ Please reply to a View Once image/video message.";
 
-  // Check if the quoted message is view-once
-  if (!(/viewOnce(MessageV2)?/.test(m.quoted.mtype) || m.quoted.viewOnce)) {
-    throw "⚠️ This is not a view-once message.";
-  }
+  const quoted = m.quoted;
+  const type = Object.keys(quoted.message || {})[0];
+  const viewOnceContent = quoted.message?.[type]?.message;
 
-  // Download the media content
-  const msg = m.quoted;
-  const isImage = msg.mtype === "imageMessage";
-  const isVideo = msg.mtype === "videoMessage";
-  const mediaStream = await downloadContentFromMessage(
-    msg,
+  if (!viewOnceContent)
+    throw "⚠️ This doesn't appear to be a proper view-once message.";
+
+  const isImage = !!viewOnceContent.imageMessage;
+  const isVideo = !!viewOnceContent.videoMessage;
+
+  const mediaType = isImage ? "imageMessage" : isVideo ? "videoMessage" : null;
+  if (!mediaType)
+    throw "⚠️ Only view-once *images* and *videos* are supported.";
+
+  const mediaMsg = viewOnceContent[mediaType];
+  const stream = await downloadContentFromMessage(
+    mediaMsg,
     isImage ? "image" : "video"
   );
+
   let buffer = Buffer.from([]);
-  for await (const chunk of mediaStream) {
+  for await (const chunk of stream) {
     buffer = Buffer.concat([buffer, chunk]);
   }
 
-  // Send back the media file with original caption (if any)
-  const caption = msg.caption || msg.text || "";
-  if (isVideo) {
-    return conn.sendFile(m.chat, buffer, "viewonce.mp4", caption, m);
-  } else if (isImage) {
-    return conn.sendFile(m.chat, buffer, "viewonce.jpg", caption, m);
-  }
+  const caption = mediaMsg.caption || "";
+
+  return conn.sendFile(
+    m.chat,
+    buffer,
+    isImage ? "viewonce.jpg" : "viewonce.mp4",
+    caption,
+    m
+  );
 };
 
 handler.help = ["readvo"];
